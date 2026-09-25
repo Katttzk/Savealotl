@@ -477,6 +477,20 @@ body.noscroll{overflow:hidden}
 .dlReal.warn{color:#b45309}
 .spDl{display:block;color:var(--accent);font-weight:700;font-size:.78rem;margin-top:2px}
 #simMode{flex-wrap:wrap}
+
+.welcome{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:calc(24px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.welcome[hidden]{display:none}
+.wBox{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:22px 18px}
+.wLogo{display:block;margin:0 auto 8px;border-radius:24px}
+.wBox h1{font:800 1.6rem/1.15 "Baloo 2",Nunito,sans-serif;text-align:center;margin:0 0 6px}
+.wBox .note{text-align:center}
+.wBox .seg{margin:4px 0 14px}
+#wNames{display:grid;gap:8px}
+#wNames input{border-width:2px;border-style:solid}
+.wMore{display:flex;gap:8px;margin-top:8px}
+.wMore[hidden],.wMore [hidden]{display:none}
+.wBox .pair input{width:100%}
+.wJoin{display:block;width:100%;margin-top:12px;text-align:center}
 </style>
 </head>
 <body>
@@ -757,6 +771,23 @@ body.noscroll{overflow:hidden}
   <button type="button" data-view="simular"><span aria-hidden="true">🧮</span>Simular</button>
   <button type="button" data-view="aprender"><span aria-hidden="true">💡</span>Aprender</button>
 </nav>
+<div class="welcome" id="welcome" hidden>
+  <div class="wBox" role="dialog" aria-modal="true" aria-labelledby="wTitle">
+    <img src="icon-192.png" alt="" class="wLogo" width="96" height="96">
+    <h1 id="wTitle">Olá! Bem-vindo(a) ao Savealotl</h1>
+    <p class="note">Aqui cada poupança tem o seu aquário. Os axolotls nascem bebés e crescem à medida que vais guardando dinheiro.</p>
+    <span class="flabel">Vais poupar…</span>
+    <div class="seg" id="wMode" role="tablist"><button type="button" role="tab" data-n="1">Sozinho/a</button><button type="button" role="tab" data-n="2">A dois</button><button type="button" role="tab" data-n="3">Em grupo</button></div>
+    <span class="flabel" id="wNamesLabel">Como te chamas?</span>
+    <div id="wNames"></div>
+    <div class="wMore" id="wMore"><button type="button" class="mini-edit" id="wAdd">+ Mais uma pessoa</button><button type="button" class="mini-edit" id="wRem">− Menos uma</button></div>
+    <span class="flabel" style="margin-top:12px">O primeiro sonho (opcional)</span>
+    <div class="pair"><input type="text" id="wDream" maxlength="60" placeholder="Fundo de emergência" aria-label="Nome do primeiro sonho"><input type="number" id="wGoal" min="1" step="any" inputmode="decimal" placeholder="1000 €" aria-label="Valor do objetivo"></div>
+    <button type="button" class="cta" id="wGo">Começar 🦎</button>
+    <p class="note" style="margin:10px 0 0;text-align:center">Tudo fica guardado neste telemóvel. Podes ligar ao Google Drive depois, na nuvem ☁️.</p>
+    <button type="button" class="ghostBtn wJoin" id="wJoin">Já usamos a Savealotl noutro telemóvel: ligar ao Google Drive</button>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -1077,19 +1108,14 @@ function axoSVG(i){
 }
 
 // ---------- Estado ----------
-const KEY='axolotls-v3';
+const KEY='savealotl-v1';
 const uid=()=>Math.random().toString(36).slice(2,9);
-const DEFAULTS=()=>({sel:0,cur:0,tab:'acc',title:'Os nossos axolotls',
-  axos:[{id:'a1',name:'Cátia',body:'#ffd6e2',gills:'#f47fa4',acc:'laco',accColor:'#8fd3f4',hand:'',spots:false},
-        {id:'a2',name:'Amor',body:'#bcd4f6',gills:'#7f95e6',acc:'flor',accColor:'#ffb3c7',hand:'moeda',spots:false}],
-  savings:[{id:'s1',name:'Viagem de autocaravana',goal:3000,theme:'autocaravana',by:{},off:{},log:[],
-             items:[{id:'i1',name:'Aluguer da autocaravana',amount:1500},{id:'i2',name:'Combustível',amount:600},{id:'i3',name:'Parques de campismo',amount:500},{id:'i4',name:'Comida e passeios',amount:400}]},
-           {id:'s2',name:'Fundo de emergência',goal:2000,theme:'pirata',by:{},off:{},log:[],items:[]},
-           {id:'s3',name:'Férias na praia',goal:1500,theme:'ferias',by:{},off:{},log:[],
-             items:[{id:'i5',name:'Voos',amount:500},{id:'i6',name:'Alojamento',amount:700},{id:'i7',name:'Passeios e jantares',amount:300}]}]});
+const DEFAULTS=()=>({sel:0,cur:0,tab:'acc',title:'Savealotl',onboarded:false,
+  axos:[{id:'a1',name:'Eu',body:'#ffd6e2',gills:'#f47fa4',acc:'nenhum',accColor:'#8fd3f4',hand:'',spots:false}],
+  savings:[{id:'s1',name:'Fundo de emergência',goal:1000,theme:'pirata',by:{},off:{},log:[],items:[]}]});
 let state=null;
 try{const raw=localStorage.getItem(KEY);if(raw)state=JSON.parse(raw)}catch(e){state=null}
-if(!state){state=DEFAULTS();
+if(!state){state=DEFAULTS();if(false)
   try{const old=JSON.parse(localStorage.getItem('axolotls-2d-v1')||'null');
     if(old&&Array.isArray(old.axos)&&old.axos.length){
       state.title=old.title||state.title;
@@ -1564,20 +1590,14 @@ const mKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 const MK=()=>mKey(new Date());
 const dim=d=>new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
 function seedFin(){
-  const d=new Date(),day=d.getDate(),a0=state.axos[0]?state.axos[0].id:'',a1=state.axos[1]?state.axos[1].id:a0;
-  const at=k=>new Date(d.getFullYear(),d.getMonth(),Math.max(1,Math.min(day,k)),12+(k%6),10).getTime();
-  const cats=[{id:'c1',emoji:'🛒',name:'Supermercado',budget:350,ess:true},{id:'c2',emoji:'🐾',name:'Animais',budget:60,ess:true},
-    {id:'c3',emoji:'☕',name:'Cafés e restaurantes',budget:80,ess:false},{id:'c4',emoji:'⛽',name:'Combustível e transportes',budget:100,ess:true},
-    {id:'c5',emoji:'🏠',name:'Casa',budget:40,ess:true},{id:'c6',emoji:'💊',name:'Saúde',budget:30,ess:true},
-    {id:'c7',emoji:'🎉',name:'Lazer',budget:60,ess:false},{id:'c8',emoji:'🛍️',name:'Compras',budget:50,ess:false},{id:'c9',emoji:'✨',name:'Outros',budget:30,ess:false}];
+  const a0=state.axos[0]?state.axos[0].id:'';
+  const cats=[{id:'c1',emoji:'🛒',name:'Supermercado',budget:0,ess:true},{id:'c2',emoji:'🐾',name:'Animais',budget:0,ess:true},
+    {id:'c3',emoji:'☕',name:'Cafés e restaurantes',budget:0,ess:false},{id:'c4',emoji:'⛽',name:'Combustível e transportes',budget:0,ess:true},
+    {id:'c5',emoji:'🏠',name:'Casa',budget:0,ess:true},{id:'c6',emoji:'💊',name:'Saúde',budget:0,ess:true},
+    {id:'c7',emoji:'🎉',name:'Lazer',budget:0,ess:false},{id:'c8',emoji:'🛍️',name:'Compras',budget:0,ess:false},{id:'c9',emoji:'✨',name:'Outros',budget:0,ess:false}];
   return {period:'mes',payer:a0,plan:null,planMode:'juntas',
-    srcs:[{id:'f1',emoji:'💼',name:'Salário',expected:1000},{id:'f2',emoji:'💶',name:'Trabalho do dia',expected:0},{id:'f3',emoji:'🎁',name:'Extras',expected:0}],
-    recv:[{id:uid(),src:'f1',v:1000,t:at(1),w:a1},...[1,2,3,5,6,8,9,10,12,13,15,16,17,19,20,22,23,24].filter(k=>k<=day).map((k,n)=>({id:uid(),src:'f2',v:[45,62,38,70,55,48,80,41,66,52,58,35,74,60,44,69,50,57][n%18],t:at(k),w:a0})),{id:uid(),src:'f3',v:40,t:at(14),w:a1}],
-    bills:[{id:'b1',name:'Renda',amount:650,due:1},{id:'b2',name:'Eletricidade',amount:60,due:10},{id:'b3',name:'Água',amount:25,due:15},
-           {id:'b4',name:'Internet e telemóvel',amount:45,due:20},{id:'b5',name:'Seguro do carro',amount:35,due:25}].map(b=>({...b,paid:b.due<day?{[mKey(d)]:true}:{}})),
-    cats,
-    spends:[{id:uid(),c:'c1',v:64.3,t:at(2),w:a0},{id:uid(),c:'c3',v:4.2,t:at(3),w:a1},{id:uid(),c:'c2',v:28.9,t:at(5),w:a0},{id:uid(),c:'c4',v:45,t:at(6),w:a1},
-            {id:uid(),c:'c1',v:52.75,t:at(9),w:a1},{id:uid(),c:'c3',v:3.8,t:at(11),w:a0},{id:uid(),c:'c7',v:18,t:at(13),w:''},{id:uid(),c:'c3',v:12.5,t:at(15),w:a0}]};
+    srcs:[{id:'f1',emoji:'💼',name:'Salário',expected:0},{id:'f2',emoji:'💶',name:'Trabalho do dia',expected:0},{id:'f3',emoji:'🎁',name:'Extras',expected:0}],
+    recv:[],bills:[],cats,spends:[],lists:[]};
 }
 if(!state.fin){state.fin=seedFin();save()}
 {const f=state.fin;if(!Array.isArray(f.srcs)){ // passar o formato antigo (lista de rendimentos) para fontes + recebimentos
@@ -1655,7 +1675,7 @@ function renderHome(){
   $('dateLine').textContent=monthName(d).replace(/^./,c=>c.toUpperCase());
   const M=incomeM(),B=billsM(),V=spentM(),S=savedThisMonth(),P=planM(),keep=Math.max(P,S);
   const free=M-B-V-keep;
-  $('leftMonth').textContent=free>=0?'Ainda podes gastar '+fmt(free):'Passaste '+fmt(-free)+' do previsto';
+  $('leftMonth').textContent=M<=0&&!F.spends.length?'Vamos começar! 🦎':free>=0?'Ainda podes gastar '+fmt(free):'Passaste '+fmt(-free)+' do previsto';
   $('leftMonth').classList.toggle('neg',free<0);
   $('perDay').textContent=M<=0?'Começa por pôr os teus rendimentos aqui em baixo. Tudo o resto parte daí.'
     :free>0?'Cerca de '+fmt(free/left_days)+' por dia até ao fim do mês, já a contar com '+fmt(keep)+' para poupar e com as despesas fixas.'
@@ -1663,7 +1683,7 @@ function renderHome(){
   const recv=receivedM();
   const billLeft=F.bills.filter(b=>!b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0);
   $('sumGrid').innerHTML='';
-  [['Rendimentos',fmt(M),'recebido '+fmt(recv)],['Despesas fixas',fmt(B),billLeft>0?'faltam '+fmt(billLeft):'tudo pago ✓'],['Gastos do mês',fmt(V),'até hoje'],['Poupança',fmt(S),'plano: '+fmt(P)]]
+  [['Rendimentos',fmt(M),'recebido '+fmt(recv)],['Despesas fixas',fmt(B),!F.bills.length?'ainda sem contas':billLeft>0?'faltam '+fmt(billLeft):'tudo pago ✓'],['Gastos do mês',fmt(V),'até hoje'],['Poupança',fmt(S),'plano: '+fmt(P)]]
     .forEach(([a,b,c])=>{const t=el('div','tile');t.innerHTML='<small></small><b></b><span></span>';t.querySelector('small').textContent=a;t.querySelector('b').textContent=b;t.querySelector('span').textContent=c;$('sumGrid').appendChild(t)});
   const tp=tipsFor()[0];$('tipOfDay').hidden=!tp;if(tp)$('tipOfDay').textContent=tp.i+' '+tp.t+' Ver mais dicas ›';
   renderIncome();renderBills();renderSpend();refreshHomeAq();
@@ -1825,7 +1845,7 @@ $('spAmt').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault()
 // ---------- Aquário do mês ----------
 function monthScore(){
   const k=MK(),P=planM(),S=savedThisMonth();const sp=P>0?Math.min(1,Math.max(0,S)/P):(S>0?1:0);
-  const tot=billsM(),paid=F.bills.filter(b=>b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0);const bp=tot>0?paid/tot:1;
+  const tot=billsM(),paid=F.bills.filter(b=>b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0);const bp=tot>0?paid/tot:0;if(!(tot>0))return Math.min(1,sp);
   return Math.min(1,sp*.6+bp*.4);
 }
 let homeSig='',homeStage=-1,homeMonth='';
@@ -2061,7 +2081,8 @@ $('simApply').addEventListener('click',()=>{
 // ======================================================================
 // ---------- Dia-a-dia: listas de compras ----------
 // ======================================================================
-if(!Array.isArray(F.lists)){const sup=(F.cats.find(c=>/super/i.test(c.name))||F.cats[0]||{id:''}).id;
+if(!Array.isArray(F.lists))F.lists=[];
+if(false){const sup=(F.cats.find(c=>/super/i.test(c.name))||F.cats[0]||{id:''}).id;
   F.lists=[{id:uid(),name:'Compras da semana',cat:sup,done:false,items:['Leite','Pão','Fruta','Arroz','Ovos','Ração dos animais','Detergente'].map((t,n)=>({id:uid(),t,done:n<2}))}]}
 let listSel=null,askDelList=false,doneOpen=false,carry=true;
 const activeLists=()=>F.lists.filter(l=>!l.done);
@@ -2141,20 +2162,52 @@ function renderDoneLists(){
 $('newList').addEventListener('click',()=>{newList('Nova lista',[]);renderLists();const n=$('lBody').querySelector('.lname');if(n){n.focus();n.select()}});
 showView(state.view);
 
+// ---------- Boas-vindas (primeira vez que a app abre) ----------
+(function welcome(){
+  if(state.onboarded!==false)return;
+  const MC=[['#ffd6e2','#f47fa4'],['#bcd4f6','#7f95e6'],['#c4f0dd','#5fc7a3'],['#fbe3a0','#f5a26b'],['#dccbf5','#b085e0'],['#ffdcc6','#ff9a78']];
+  let n=1;const names=[];
+  function draw(){
+    [...$('wMode').children].forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.n===Math.min(n,3))));
+    $('wNamesLabel').textContent=n===1?'Como te chamas?':'Como se chamam?';
+    const box=$('wNames');box.innerHTML='';
+    for(let i=0;i<n;i++){const inp=document.createElement('input');inp.type='text';inp.maxLength=16;inp.className='wName';inp.placeholder=n===1?'O teu nome':'Nome '+(i+1);inp.value=names[i]||'';
+      inp.setAttribute('aria-label','Nome '+(i+1));inp.style.borderColor=MC[i%6][1];inp.addEventListener('input',e=>{names[i]=e.target.value});box.appendChild(inp)}
+    $('wMore').hidden=n<3;$('wAdd').hidden=n>=MAX;$('wRem').hidden=n<=3;
+  }
+  $('wMode').addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;n=+b.dataset.n;draw();const f=$('wNames').querySelector('input');if(f)f.focus()});
+  $('wAdd').addEventListener('click',()=>{if(n<MAX){n++;draw()}});
+  $('wRem').addEventListener('click',()=>{if(n>3){n--;draw()}});
+  $('wGo').addEventListener('click',()=>{
+    const ids=[];state.axos=[];
+    for(let i=0;i<n;i++){const id='a'+uid();ids.push(id);const c=MC[i%6];
+      state.axos.push({id,name:(names[i]||'').trim()||(n===1?'Eu':'Pessoa '+(i+1)),body:c[0],gills:c[1],acc:'nenhum',accColor:'#8fd3f4',hand:'',spots:false})}
+    const dn=$('wDream').value.trim(),dg=money($('wGoal').value);
+    const sv=state.savings[0];if(dn)sv.name=dn;if(dg>0)sv.goal=dg;if(dn&&!/emerg/i.test(dn))sv.theme='classico';
+    F.payer=ids[0];F.inWho=ids[0];state.sel=0;state.onboarded=true;anim.length=0;save();
+    $('welcome').hidden=true;document.body.classList.remove('noscroll');showView('inicio');
+    toast(n===1?'Olá, '+state.axos[0].name+'! Começa por registar o que recebes.':'Tudo pronto! Comecem por registar o que recebem.');
+  });
+  $('wJoin').addEventListener('click',()=>{state.onboarded=true;save();$('welcome').hidden=true;document.body.classList.remove('noscroll');showView('inicio');
+    if(typeof connectDrive==='function')connectDrive()});
+  draw();$('welcome').hidden=false;document.body.classList.add('noscroll');
+})();
+
+
 // ======================================================================
 // ---------- Sincronização com o Google Drive (a cada 5 segundos) ----------
 // ======================================================================
 const CID=(window.AXO_CONFIG&&window.AXO_CONFIG.googleClientId)||'';
 const HAS_CID=/\.apps\.googleusercontent\.com$/.test(CID)&&!/^COLOCA/.test(CID);
 const SCOPE='https://www.googleapis.com/auth/drive.appdata';
-const DFILE='axolotls-dados.json';
+const DFILE='savealotl-dados.json';
 const UIKEYS=['view','cur','sel','tab'],FUIKEYS=['sim','period','payer','inWho'];
-const SYNC={on:localStorage.getItem('axo-sync')==='1',token:null,exp:0,fileId:localStorage.getItem('axo-fileId')||null,ver:null,busy:false,again:false,timer:null,status:'off',last:0,existed:false};
+const SYNC={on:localStorage.getItem('sav-sync')==='1',token:null,exp:0,fileId:localStorage.getItem('sav-fileId')||null,ver:null,busy:false,again:false,timer:null,status:'off',last:0,existed:false};
 function syncable(){const c=JSON.parse(JSON.stringify(state));UIKEYS.forEach(k=>delete c[k]);if(c.fin)FUIKEYS.forEach(k=>delete c.fin[k]);return c}
 function stable(o){return JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v)}
 const same=(a,b)=>stable(a)===stable(b);
-const loadBase=()=>{try{const r=localStorage.getItem('axo-base');return r?JSON.parse(r):null}catch(e){return null}};
-const saveBase=o=>{try{localStorage.setItem('axo-base',JSON.stringify(o))}catch(e){}};
+const loadBase=()=>{try{const r=localStorage.getItem('sav-base');return r?JSON.parse(r):null}catch(e){return null}};
+const saveBase=o=>{try{localStorage.setItem('sav-base',JSON.stringify(o))}catch(e){}};
 // Junta três versões (base = última sincronizada, local, Drive). Listas com "id" juntam-se item a item,
 // apagados de um lado desaparecem do outro, e os valores guardados por pessoa ("by") somam-se.
 function merge3(b,l,r,mode){
@@ -2209,7 +2262,7 @@ function getToken(interactive){return new Promise((res,rej)=>{if(!initGis()){rej
 async function api(url,opt,retry){opt=opt||{};if(!SYNC.token||Date.now()>SYNC.exp-60000)await getToken(false);
   const r=await fetch(url,Object.assign({},opt,{headers:Object.assign({},opt.headers||{},{Authorization:'Bearer '+SYNC.token})}));
   if(r.status===401&&retry!==false){SYNC.token=null;await getToken(false);return api(url,opt,false)}
-  if(r.status===404&&SYNC.fileId&&url.includes(SYNC.fileId)){SYNC.fileId=null;localStorage.removeItem('axo-fileId');throw new Error('ficheiro desapareceu')}
+  if(r.status===404&&SYNC.fileId&&url.includes(SYNC.fileId)){SYNC.fileId=null;localStorage.removeItem('sav-fileId');throw new Error('ficheiro desapareceu')}
   if(!r.ok)throw new Error('Drive '+r.status);return r}
 const FURL=()=>'https://www.googleapis.com/drive/v3/files/'+SYNC.fileId;
 const UURL=()=>'https://www.googleapis.com/upload/drive/v3/files/'+SYNC.fileId+'?uploadType=media&fields=version';
@@ -2222,7 +2275,7 @@ async function ensureFile(){
     const local=syncable();fd.append('file',new Blob([JSON.stringify(local)],{type:'application/json'}));
     const c=await(await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,version',{method:'POST',body:fd})).json();
     SYNC.fileId=c.id;SYNC.ver=c.version;saveBase(local)}
-  localStorage.setItem('axo-fileId',SYNC.fileId);
+  localStorage.setItem('sav-fileId',SYNC.fileId);
 }
 const typing=()=>{const a=document.activeElement;return !!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox'&&a.type!=='range')};
 async function syncNow(){
@@ -2260,11 +2313,11 @@ window.addEventListener('offline',()=>setSyncStatus('offline'));
 async function connectDrive(){
   if(!HAS_CID){toast('Falta configurar o Client ID do Google (ver LEIA-ME).');return}
   if(!gisReady()){toast('O Google ainda está a carregar. Tenta daqui a uns segundos.');return}
-  try{await getToken(!SYNC.token&&localStorage.getItem('axo-sync')!=='1');SYNC.on=true;localStorage.setItem('axo-sync','1');await syncNow();toast('Ligado ao Google Drive. As alterações passam para o outro telemóvel em cerca de 5 segundos.')}
+  try{await getToken(!SYNC.token&&localStorage.getItem('sav-sync')!=='1');SYNC.on=true;localStorage.setItem('sav-sync','1');await syncNow();toast('Ligado ao Google Drive. As alterações passam para o outro telemóvel em cerca de 5 segundos.')}
   catch(e){console.warn(e);setSyncStatus('login');toast('Não foi possível ligar ao Google. Tenta outra vez.')}
 }
 function disconnectDrive(){try{if(SYNC.token&&gisReady())google.accounts.oauth2.revoke(SYNC.token,()=>{})}catch(e){}
-  SYNC.on=false;SYNC.token=null;localStorage.removeItem('axo-sync');setSyncStatus('off');toast('Desligado do Google Drive. Os dados ficam guardados neste aparelho.')}
+  SYNC.on=false;SYNC.token=null;localStorage.removeItem('sav-sync');setSyncStatus('off');toast('Desligado do Google Drive. Os dados ficam guardados neste aparelho.')}
 // --- estado visível ---
 function setSyncStatus(st){SYNC.status=st;const b=$('syncBtn');if(!b)return;b.dataset.st=st;
   const lab={off:'Sincronização desligada',login:'Toca para voltar a ligar ao Google',sync:'A sincronizar…',ok:'Sincronizado',err:'Erro na sincronização',offline:'Sem internet: guardado neste aparelho'}[st]||'';
@@ -2293,7 +2346,7 @@ $('impBtn').addEventListener('click',()=>$('impFile').click());
 $('impFile').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
   try{const d=JSON.parse(await f.text());if(!Array.isArray(d.axos)||!Array.isArray(d.savings)||!d.fin)throw new Error('formato');
     if(!confirm('Substituir os dados deste aparelho pela cópia "'+f.name+'"?'))return;
-    localStorage.setItem(KEY,JSON.stringify(d));localStorage.removeItem('axo-base');SYNC.ver=null;location.reload()}
+    localStorage.setItem(KEY,JSON.stringify(d));localStorage.removeItem('sav-base');SYNC.ver=null;location.reload()}
   catch(err){toast('Este ficheiro não parece ser uma cópia desta app.')}});
 let askZero=false;
 $('zeroBtn').addEventListener('click',()=>{
