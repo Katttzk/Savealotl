@@ -1,7 +1,7 @@
 // Service worker: a app abre mesmo sem internet. Os pedidos ao Google nunca passam pela cache.
-const CACHE = 'axolotls-v1';
+const CACHE = 'axolotls-v2';
 const SHELL = ['./', './index.html', './config.js', './manifest.webmanifest',
-  './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
+  './icon-192.png', './icon-512.png', './maskable-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
