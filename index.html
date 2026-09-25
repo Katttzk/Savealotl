@@ -2256,14 +2256,17 @@ let tokenClient=null,tokenWait=null;
 function gisReady(){return !!(window.google&&google.accounts&&google.accounts.oauth2)}
 function initGis(){if(tokenClient)return true;if(!gisReady()||!HAS_CID)return false;
   tokenClient=google.accounts.oauth2.initTokenClient({client_id:CID,scope:SCOPE,
-    callback:resp=>{const w=tokenWait;tokenWait=null;if(resp.error){w&&w.rej(resp);return}SYNC.token=resp.access_token;SYNC.exp=Date.now()+(+resp.expires_in||3600)*1000;w&&w.res()},
+    callback:resp=>{const w=tokenWait;tokenWait=null;if(resp.error){SYNC.lastErr={code:'auth',msg:resp.error};w&&w.rej(resp);return}
+      try{if(!google.accounts.oauth2.hasGrantedAllScopes(resp,SCOPE)){SYNC.lastErr={code:'scope',msg:''};w&&w.rej(new Error('scope'));return}}catch(e){}SYNC.token=resp.access_token;SYNC.exp=Date.now()+(+resp.expires_in||3600)*1000;w&&w.res()},
     error_callback:e=>{const w=tokenWait;tokenWait=null;w&&w.rej(e)}});return true}
 function getToken(interactive){return new Promise((res,rej)=>{if(!initGis()){rej(new Error('Google ainda não carregou'));return}tokenWait={res,rej};tokenClient.requestAccessToken({prompt:interactive?'consent':''})})}
 async function api(url,opt,retry){opt=opt||{};if(!SYNC.token||Date.now()>SYNC.exp-60000)await getToken(false);
   const r=await fetch(url,Object.assign({},opt,{headers:Object.assign({},opt.headers||{},{Authorization:'Bearer '+SYNC.token})}));
   if(r.status===401&&retry!==false){SYNC.token=null;await getToken(false);return api(url,opt,false)}
   if(r.status===404&&SYNC.fileId&&url.includes(SYNC.fileId)){SYNC.fileId=null;localStorage.removeItem('sav-fileId');throw new Error('ficheiro desapareceu')}
-  if(!r.ok)throw new Error('Drive '+r.status);return r}
+  if(!r.ok){let msg='';try{const j=await r.json();msg=(j.error&&(j.error.message||j.error.status))||''}catch(e){}
+    SYNC.lastErr={code:r.status,msg};throw new Error('Drive '+r.status+' '+msg)}
+  SYNC.lastErr=null;return r}
 const FURL=()=>'https://www.googleapis.com/drive/v3/files/'+SYNC.fileId;
 const UURL=()=>'https://www.googleapis.com/upload/drive/v3/files/'+SYNC.fileId+'?uploadType=media&fields=version';
 async function ensureFile(){
@@ -2313,7 +2316,7 @@ window.addEventListener('offline',()=>setSyncStatus('offline'));
 async function connectDrive(){
   if(!HAS_CID){toast('Falta configurar o Client ID do Google (ver LEIA-ME).');return}
   if(!gisReady()){toast('O Google ainda está a carregar. Tenta daqui a uns segundos.');return}
-  try{await getToken(!SYNC.token&&localStorage.getItem('sav-sync')!=='1');SYNC.on=true;localStorage.setItem('sav-sync','1');await syncNow();toast('Ligado ao Google Drive. As alterações passam para o outro telemóvel em cerca de 5 segundos.')}
+  try{const needConsent=(!SYNC.token&&localStorage.getItem('sav-sync')!=='1')||(SYNC.lastErr&&(SYNC.lastErr.code==='scope'||SYNC.lastErr.code===403));if(needConsent)SYNC.token=null;await getToken(needConsent);SYNC.on=true;localStorage.setItem('sav-sync','1');await syncNow();toast('Ligado ao Google Drive. As alterações passam para o outro telemóvel em cerca de 5 segundos.')}
   catch(e){console.warn(e);setSyncStatus('login');toast('Não foi possível ligar ao Google. Tenta outra vez.')}
 }
 function disconnectDrive(){try{if(SYNC.token&&gisReady())google.accounts.oauth2.revoke(SYNC.token,()=>{})}catch(e){}
@@ -2322,12 +2325,20 @@ function disconnectDrive(){try{if(SYNC.token&&gisReady())google.accounts.oauth2.
 function setSyncStatus(st){SYNC.status=st;const b=$('syncBtn');if(!b)return;b.dataset.st=st;
   const lab={off:'Sincronização desligada',login:'Toca para voltar a ligar ao Google',sync:'A sincronizar…',ok:'Sincronizado',err:'Erro na sincronização',offline:'Sem internet: guardado neste aparelho'}[st]||'';
   b.setAttribute('aria-label',lab+'. Abrir definições');renderSyncInfo()}
+function errText(){const e=SYNC.lastErr||{},m=String(e.msg||'');
+  if(e.code==='scope')return '🔑 Falta dar autorização ao Google Drive. Toca em "Ligar ao Google Drive" e, no ecrã da Google, marca a caixa do Google Drive antes de "Continuar".';
+  if(e.code==='auth')return '🔑 A Google não deixou ligar ('+m+'). Confirma que esta conta está nos "Utilizadores de teste" da Google Cloud.';
+  if(e.code===403&&/has not been used|is disabled|accessNotConfigured|SERVICE_DISABLED/i.test(m))return '⚙️ A Google Drive API não está ativada no projeto da Google Cloud onde criaste o ID de cliente. Ativa-a em APIs e serviços → Biblioteca → Google Drive API, espera 2 minutos e toca em "Sincronizar agora".';
+  if(e.code===403&&/insufficient|scope|permission/i.test(m))return '🔑 A autorização do Drive não ficou dada. Toca em "Desligar", depois em "Ligar ao Google Drive", e marca a caixa do Google Drive no ecrã da Google.';
+  if(e.code===401)return '🔑 A ligação à Google expirou. Toca em "Ligar ao Google Drive".';
+  if(e.code)return '⚠️ Erro da Google ('+e.code+(m?': '+m:'')+'). Tenta "Sincronizar agora".';
+  return '⚠️ Houve um problema. Tenta "Sincronizar agora".'}
 function renderSyncInfo(){if($('setSheet').hidden)return;
   const st=SYNC.status,ago=SYNC.last?Math.round((Date.now()-SYNC.last)/1000):null;
   $('syncState').textContent=!HAS_CID?'Ainda não configurado: falta o Client ID do Google no ficheiro config.js.':
     st==='ok'?'✅ Sincronizado'+(ago!=null?' há '+(ago<60?ago+' s':Math.round(ago/60)+' min'):''):st==='sync'?'🔄 A sincronizar…':st==='offline'?'📴 Sem internet. Fica tudo guardado e sincroniza quando voltar.':
-    st==='err'?'⚠️ Houve um problema. Tenta "Sincronizar agora".':st==='login'?'🔑 É preciso voltar a ligar à conta Google.':'Desligado. Os dados estão só neste aparelho.';
-  $('syncConnect').hidden=SYNC.on&&!!SYNC.token;$('syncConnect').textContent=SYNC.on?'Voltar a ligar':'Ligar ao Google Drive';
+    st==='err'||st==='login'&&SYNC.lastErr?errText():st==='login'?'🔑 É preciso voltar a ligar à conta Google.':'Desligado. Os dados estão só neste aparelho.';
+  $('syncConnect').hidden=SYNC.on&&!!SYNC.token&&!(SYNC.lastErr&&(SYNC.lastErr.code==='scope'||SYNC.lastErr.code===401||SYNC.lastErr.code===403));$('syncConnect').textContent=SYNC.on?'Voltar a ligar':'Ligar ao Google Drive';
   $('syncNowBtn').hidden=!(SYNC.on&&SYNC.token);$('syncOff').hidden=!SYNC.on;
 }
 setInterval(renderSyncInfo,1000);
