@@ -2,5 +2,5 @@
 // Cola aqui o "ID de cliente" OAuth que criaste na Google Cloud Console (ver LEIA-ME.md).
 // Sem isto a app funciona na mesma, mas só guarda os dados neste aparelho.
 window.AXO_CONFIG = {
-  googleClientId: 'COLOCA_AQUI_O_TEU_CLIENT_ID.apps.googleusercontent.com'
+  googleClientId: 610284523747-o48lqjsfdajtcr67tiffrg6oultpq8na.apps.googleusercontent.com'
 };
