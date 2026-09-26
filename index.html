@@ -1609,6 +1609,9 @@ if(!state.fin){state.fin=seedFin();save()}
   delete f.incomes;save()}}
 if(!state.view)state.view='inicio';
 const F=state.fin;
+if(!F.startedAt){const ts=[...(F.recv||[]),...(F.spends||[])].map(x=>x.t);F.startedAt=ts.length?Math.min(...ts):Date.now()}
+function trackDays(){const d=new Date(),ms=new Date(d.getFullYear(),d.getMonth(),1).getTime(),sd=new Date(F.startedAt);const st=Math.max(ms,new Date(sd.getFullYear(),sd.getMonth(),sd.getDate()).getTime());
+  return Math.max(1,Math.floor((new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()-st)/864e5)+1)}
 ['srcs','recv','bills','cats','spends'].forEach(k=>{if(!Array.isArray(F[k]))F[k]=[]});
 F.bills.forEach(b=>{b.paid=b.paid||{}});
 {const cut=Date.now()-400*864e5;F.spends=F.spends.filter(s=>s.t>cut);F.recv=F.recv.filter(s=>s.t>cut)}
@@ -1620,9 +1623,11 @@ function srcMonthly(id){ // previsto se definido; senão média dos meses anteri
   const s=F.srcs.find(x=>x.id===id);if(s&&+s.expected>0)return +s.expected;
   const pv=prevMonths().map(k=>recvIn(k).filter(r=>(r.src||'')===id).reduce((a,r)=>a+r.v,0)).filter(v=>v>0);
   if(pv.length)return pv.reduce((a,b)=>a+b,0)/pv.length;
-  const d=new Date(),day=d.getDate(),cur=recvIn(MK()).filter(r=>(r.src||'')===id).reduce((a,r)=>a+r.v,0);return day>=7?cur/day*dim(d):cur}
+  const d=new Date(),td=trackDays(),cur=recvIn(MK()).filter(r=>(r.src||'')===id).reduce((a,r)=>a+r.v,0);return td>=14?cur/td*dim(d):cur}
 function expectedM(){const ids=[...new Set([...F.srcs.map(x=>x.id),...F.recv.map(r=>r.src||'')])].filter(id=>id===''||F.srcs.some(x=>x.id===id)||true);return ids.reduce((a,id)=>a+srcMonthly(id),0)}
 const incomeM=()=>Math.max(receivedM(),expectedM());
+// Dinheiro com que se pode contar este mês: o que já entrou + o que falta receber dos valores fixos (ex.: salário).
+function incomeNow(){const k=MK();let v=receivedM();F.srcs.forEach(x=>{if(+x.expected>0){const got=recvIn(k).filter(r=>r.src===x.id).reduce((a,r)=>a+r.v,0);v+=Math.max(0,+x.expected-got)}});return v}
 const billsM=()=>F.bills.reduce((a,b)=>a+(+b.amount||0),0);
 const spendsIn=k=>F.spends.filter(s=>mKey(new Date(s.t))===k);
 const spentM=()=>spendsIn(MK()).reduce((a,s)=>a+s.v,0);
@@ -1634,14 +1639,16 @@ function prevMonths(){const d=new Date();return [1,2,3].map(k=>mKey(new Date(d.g
 function typicalVar(){
   const prev=prevMonths().map(k=>spendsIn(k).reduce((a,s)=>a+s.v,0)).filter(v=>v>0);
   if(prev.length)return prev.reduce((a,b)=>a+b,0)/prev.length;
-  return F.cats.reduce((a,c)=>a+catProjected(c),0)+(()=>{const d=new Date(),day=d.getDate();const un=spendsIn(MK()).filter(s=>!F.cats.find(c=>c.id===s.c)).reduce((a,s)=>a+s.v,0);return day>=7?un/day*dim(d):un})();
+  return F.cats.reduce((a,c)=>a+catProjected(c),0)+(()=>{const d=new Date(),td=trackDays();const un=spendsIn(MK()).filter(s=>!F.cats.find(c=>c.id===s.c)).reduce((a,s)=>a+s.v,0);return td>=7?un/td*dim(d):un})();
 }
 function catProjected(c){
   const prev=prevMonths().map(k=>catMonth(c,k));const hist=prevMonths().some(k=>spendsIn(k).length);
   if(hist){const pv=prev.filter((v,i)=>spendsIn(prevMonths()[i]).length);return pv.reduce((a,b)=>a+b,0)/Math.max(1,pv.length)}
-  const d=new Date(),day=d.getDate(),s=catMonth(c);return Math.max(+c.budget||0,day>=7?s/day*dim(d):s)}
+  const d=new Date(),td=trackDays(),s=catMonth(c);return Math.max(+c.budget||0,td>=7?s/td*dim(d):s)}
 const capacity=()=>Math.max(0,(incomeM()-billsM()-typicalVar())*.9);
-const planM=()=>F.plan==null?Math.floor(capacity()/5)*5:F.plan;
+// Sem dados de gastos ainda, não se assume que se gasta 0: começa-se por sugerir 10% do que entra.
+const fewData=()=>!prevMonths().some(k=>spendsIn(k).length)&&!F.cats.some(c=>+c.budget>0)&&trackDays()<7;
+const planM=()=>F.plan==null?Math.floor((fewData()?incomeM()*.1:capacity())/5)*5:F.plan;
 finReady=true;
 const monthName=d=>new Intl.DateTimeFormat('pt-PT',{month:'long',year:'numeric'}).format(d);
 const shortMonth=d=>new Intl.DateTimeFormat('pt-PT',{month:'long',year:'numeric'}).format(d);
@@ -1673,7 +1680,7 @@ document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g
 function renderHome(){
   const d=new Date(),k=MK(),day=d.getDate(),left_days=dim(d)-day+1;
   $('dateLine').textContent=monthName(d).replace(/^./,c=>c.toUpperCase());
-  const M=incomeM(),B=billsM(),V=spentM(),S=savedThisMonth(),P=planM(),keep=Math.max(P,S);
+  const M=incomeNow(),B=billsM(),V=spentM(),S=savedThisMonth(),P=planM(),keep=Math.max(Math.min(P,Math.max(0,M-B-V)),S);
   const free=M-B-V-keep;
   $('leftMonth').textContent=M<=0&&!F.spends.length?'Vamos começar! 🦎':free>=0?'Ainda podes gastar '+fmt(free):'Passaste '+fmt(-free)+' do previsto';
   $('leftMonth').classList.toggle('neg',free<0);
@@ -1683,7 +1690,7 @@ function renderHome(){
   const recv=receivedM();
   const billLeft=F.bills.filter(b=>!b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0);
   $('sumGrid').innerHTML='';
-  [['Rendimentos',fmt(M),'recebido '+fmt(recv)],['Despesas fixas',fmt(B),!F.bills.length?'ainda sem contas':billLeft>0?'faltam '+fmt(billLeft):'tudo pago ✓'],['Gastos do mês',fmt(V),'até hoje'],['Poupança',fmt(S),'plano: '+fmt(P)]]
+  [['Recebido',fmt(recv),M>recv+.5?'faltam receber '+fmt(M-recv):'este mês'],['Despesas fixas',fmt(B),!F.bills.length?'ainda sem contas':billLeft>0?'faltam '+fmt(billLeft):'tudo pago ✓'],['Gastos do mês',fmt(V),'até hoje'],['Poupança',fmt(S),'plano: '+fmt(P)]]
     .forEach(([a,b,c])=>{const t=el('div','tile');t.innerHTML='<small></small><b></b><span></span>';t.querySelector('small').textContent=a;t.querySelector('b').textContent=b;t.querySelector('span').textContent=c;$('sumGrid').appendChild(t)});
   const tp=tipsFor()[0];$('tipOfDay').hidden=!tp;if(tp)$('tipOfDay').textContent=tp.i+' '+tp.t+' Ver mais dicas ›';
   renderIncome();renderBills();renderSpend();refreshHomeAq();
