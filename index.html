@@ -217,7 +217,7 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .tabbar button{flex:1;max-width:160px;display:flex;flex-direction:column;align-items:center;gap:1px;border:none;background:none;color:var(--muted);font:700 .78rem Nunito,sans-serif;padding:6px 4px;border-radius:14px;cursor:pointer}
 .tabbar button span{font-size:1.35rem;line-height:1.1}
 .tabbar button[aria-current="page"]{color:var(--accent);background:var(--chip)}
-.toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+.toast{bottom:calc(158px + env(safe-area-inset-bottom,0px))}
 .summary .big{font:800 clamp(1.7rem,7vw,2.2rem)/1.1 "Baloo 2",Nunito,sans-serif;color:var(--accent);margin:4px 0 6px}
 .summary .big.neg{color:#d97706}
 .sumGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
@@ -491,6 +491,46 @@ body.noscroll{overflow:hidden}
 .wMore[hidden],.wMore [hidden]{display:none}
 .wBox .pair input{width:100%}
 .wJoin{display:block;width:100%;margin-top:12px;text-align:center}
+
+.fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:25;width:62px;height:62px;border-radius:50%;border:3px solid #4b2a63;background:var(--accent);color:var(--accent-ink);font:800 2.2rem/1 "Baloo 2",Nunito,sans-serif;cursor:pointer;box-shadow:0 4px 0 rgba(75,42,99,.35);display:flex;align-items:center;justify-content:center;padding:0 0 4px}
+.fab:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(75,42,99,.35)}
+body.noscroll .fab{display:none}
+.app{padding-bottom:90px}
+.qaBox{max-height:92vh}
+.qaTypes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.qaTypes button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:16px;border:2px solid var(--line);background:var(--chip);color:var(--ink);font:800 .9rem Nunito,sans-serif;cursor:pointer}
+.qaTypes button span{font-size:1.4rem}
+.qaTypes button[aria-selected="true"]{border-color:var(--accent);background:var(--surface);color:var(--accent)}
+.qaAmt{display:flex;align-items:baseline;justify-content:center;gap:6px;margin:4px 0 8px}
+.qaAmt span{font:800 2.8rem/1 "Baloo 2",Nunito,sans-serif;color:var(--ink)}
+.qaAmt small{font:800 1.6rem "Baloo 2",Nunito,sans-serif;color:var(--muted)}
+#qaSheet[data-t="in"] .qaAmt span{color:#2f9e6e}
+#qaSheet[data-t="out"] .qaAmt span{color:var(--accent)}
+#qaSheet[data-t="save"] .qaAmt span{color:#7a5ad1}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.key{font:800 1.4rem "Baloo 2",Nunito,sans-serif;padding:10px 0;border-radius:14px;border:2px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+.key:active{background:var(--line)}
+.qaRow{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;margin-bottom:6px;scrollbar-width:none}
+.qaRow::-webkit-scrollbar{display:none}
+.qchip{flex:none;display:flex;align-items:center;gap:6px;font:700 .88rem Nunito,sans-serif;padding:8px 12px;border-radius:999px;border:2px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer;white-space:nowrap}
+.qchip span{font-size:1.1rem}
+.qchip[aria-pressed="true"]{border-color:var(--accent);background:var(--surface);color:var(--accent)}
+.qchip.small{padding:6px 12px}
+.qaRow .pchip{flex:none}
+#qaDate button{flex:none;font:700 .88rem Nunito,sans-serif;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+#qaDate button[aria-pressed="true"]{border-color:var(--accent);background:var(--surface);color:var(--accent)}
+.qaPick{flex:none;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:2px solid var(--line);background:var(--chip)}
+.qaPick.on{border-color:var(--accent)}
+.qaPick input{border:none;background:none;font:700 .85rem Nunito,sans-serif;color:var(--ink);padding:2px;width:130px}
+#qaPerWrap[hidden],#qaWhoWrap[hidden]{display:none}
+.qaSave{margin-top:8px}
+.qaSave:disabled{opacity:.45;cursor:default}
+.fixedPills{display:grid;gap:6px;margin-bottom:8px}
+.fixedPills[hidden]{display:none}
+.fpill{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;border:2px dashed #2f9e6e;background:var(--surface);color:var(--ink);font:700 .92rem Nunito,sans-serif;cursor:pointer;text-align:left}
+.fpill .em{font-size:1.3rem}
+.fpill b{color:#2f9e6e;font:800 1rem "Baloo 2",Nunito,sans-serif}
+.fpill.done{border-style:solid;border-color:var(--line);opacity:.7;cursor:default}
 </style>
 </head>
 <body>
@@ -520,6 +560,7 @@ body.noscroll{overflow:hidden}
         <p class="note">Escreve o valor que entrou, escolhe quem recebeu e toca na fonte. Serve para salários e para valores diferentes todos os dias.</p>
         <div class="quickSpend"><input type="number" id="inAmt" min="0.01" step="any" inputmode="decimal" placeholder="0,00" aria-label="Valor recebido"><span>€</span></div>
         <div class="payer" id="inWho" aria-label="Quem recebeu"></div>
+        <div class="fixedPills" id="fixedPills"></div>
         <div class="catGrid" id="srcGrid"></div>
         <ul class="budgets" id="srcEdit"></ul>
         <div class="hist" id="incHist"></div>
@@ -762,6 +803,29 @@ body.noscroll{overflow:hidden}
         <div class="setBtns"><button type="button" class="ghostBtn warnb" id="zeroBtn">Começar do zero</button></div>
       </section>
     </div>
+  </div>
+</div>
+<button type="button" class="fab" id="fab" aria-label="Registar um valor"><span aria-hidden="true">+</span></button>
+<div class="sheet" id="qaSheet" hidden>
+  <div class="sheetBack" id="qaBack"></div>
+  <div class="sheetBox qaBox" role="dialog" aria-modal="true" aria-labelledby="qaTitle">
+    <div class="sheetHead"><h2 id="qaTitle">Registar</h2><button type="button" class="sheetClose" id="qaClose" aria-label="Fechar">×</button></div>
+    <div class="qaTypes" id="qaTypes" role="tablist">
+      <button type="button" role="tab" data-t="in"><span>💰</span>Entrou</button>
+      <button type="button" role="tab" data-t="out"><span>🧾</span>Gastei</button>
+      <button type="button" role="tab" data-t="save"><span>🐷</span>Guardei</button>
+    </div>
+    <div class="sheetBody">
+      <div class="qaAmt" aria-live="polite"><span id="qaVal">0</span><small>€</small></div>
+      <div class="keypad" id="qaKeys"></div>
+      <span class="flabel" id="qaWhatLabel"></span>
+      <div class="qaRow" id="qaChips"></div>
+      <div id="qaPerWrap"><span class="flabel">Este valor é de…</span><div class="qaRow" id="qaPer"></div></div>
+      <div id="qaWhoWrap"><span class="flabel" id="qaWhoLabel">Quem?</span><div class="qaRow" id="qaWho"></div></div>
+      <span class="flabel">Quando?</span>
+      <div class="qaRow" id="qaDate"><button type="button" data-d="0">Hoje</button><button type="button" data-d="1">Ontem</button><label class="qaPick"><span>📅</span><input type="date" id="qaDateIn" aria-label="Outra data"></label></div>
+    </div>
+    <button type="button" class="cta qaSave" id="qaSave">Guardar</button>
   </div>
 </div>
 <nav class="tabbar" id="tabbar" aria-label="Menu principal">
@@ -1635,7 +1699,8 @@ const catOf=id=>F.cats.find(c=>c.id===id)||{emoji:'✨',name:'Sem categoria',bud
 const whoName=id=>{const a=state.axos.find(x=>x.id===id);return a?(a.name||'Sem nome'):''};
 function savedThisMonth(){let s=0;const k=MK();state.savings.forEach(sv=>(sv.log||[]).forEach(m=>{if(mKey(new Date(m.t))===k)s+=m.v}));return s}
 function catMonth(c,k){return spendsIn(k||MK()).filter(s=>s.c===c.id).reduce((a,s)=>a+s.v,0)}
-function prevMonths(){const d=new Date();return [1,2,3].map(k=>mKey(new Date(d.getFullYear(),d.getMonth()-k,1)))}
+// Só meses completos em que a app já estava a ser usada (o mês em que se começou fica de fora, porque está incompleto).
+function prevMonths(){const d=new Date(),sd=new Date(F.startedAt||Date.now()),sk=sd.getFullYear()*12+sd.getMonth();return [1,2,3].map(k=>new Date(d.getFullYear(),d.getMonth()-k,1)).filter(m=>m.getFullYear()*12+m.getMonth()>sk).map(mKey)}
 function typicalVar(){
   const prev=prevMonths().map(k=>spendsIn(k).reduce((a,s)=>a+s.v,0)).filter(v=>v>0);
   if(prev.length)return prev.reduce((a,b)=>a+b,0)/prev.length;
@@ -1710,6 +1775,13 @@ function renderIncome(){
   const pw=$('inWho');pw.innerHTML='';
   [...state.axos.map(a=>[a.id,a.name||'Sem nome',a.body]),['','Conjunto','#fff']].forEach(([id,n,c])=>{const b=el('button','pchip');b.type='button';b.setAttribute('aria-pressed',String((F.inWho??F.payer??'')===id));
     b.innerHTML='<i></i><span></span>';b.querySelector('i').style.background=c;b.querySelector('span').textContent=n;b.addEventListener('click',()=>{F.inWho=id;save();renderIncome()});pw.appendChild(b)});
+  const fp=$('fixedPills');fp.innerHTML='';fp.hidden=editSrc;
+  F.srcs.filter(x=>+x.expected>0).forEach(x=>{const got=recvIn(MK()).filter(r=>r.src===x.id).reduce((a,r)=>a+r.v,0),miss=Math.round((+x.expected-got)*100)/100;
+    const b=el('button','fpill'+(miss<=0?' done':''));b.type='button';
+    b.innerHTML='<span class="em"></span><span class="ft"></span><b></b>';b.querySelector('.em').textContent=x.emoji||'💼';
+    b.querySelector('.ft').textContent=miss<=0?x.name+' deste mês':x.name+': já recebi?';b.querySelector('b').textContent=miss<=0?'✓ '+fmt(+x.expected):'+'+fmt(miss);
+    if(miss>0)b.addEventListener('click',()=>{const w=F.inWho??F.payer??'';F.recv.push({id:uid(),src:x.id,v:miss,t:Date.now(),w,per:'mes'});save();renderHome();toast((x.emoji||'💼')+' '+x.name+' recebido: +'+fmt(miss)+'.')});
+    else b.disabled=true;fp.appendChild(b)});
   const g=$('srcGrid');g.innerHTML='';g.hidden=editSrc;
   F.srcs.forEach(sr=>{const b=el('button','cat');b.type='button';b.innerHTML='<span class="em"></span><span class="cn"></span>';b.querySelector('.em').textContent=sr.emoji||'💰';b.querySelector('.cn').textContent=sr.name;
     b.addEventListener('click',()=>addRecv(sr));g.appendChild(b)});
@@ -1741,7 +1813,7 @@ function renderHist(kind){
   const isInc=kind==='inc',arr=isInc?F.recv:F.spends,wrap=$(isInc?'incHist':'spHist');wrap.innerHTML='';
   const list=[...arr].sort((a,b)=>b.t-a.t);
   if(!list.length){wrap.innerHTML='<p class="note" style="margin:8px 0 0">Ainda não há registos.</p>';return}
-  const info=e=>{const c=isInc?srcOf(e.src):catOf(e.c);return {em:c.emoji||'✨',name:e.note?e.note:c.name,who:whoName(e.w)}};
+  const info=e=>{const c=isInc?srcOf(e.src):catOf(e.c);return {em:c.emoji||'✨',name:(e.note?e.note:c.name)+(e.per==='semana'?' (semana)':e.per==='mes'?' (mês)':''),who:whoName(e.w)}};
   const dS=new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'});
   const last=list[0],li0=info(last);const top=el('div','hlast');
   top.innerHTML='<span class="hem"></span><div class="htx"><small class="hk"></small><span class="hn"></span></div><b></b><button type="button" class="hmore"></button>';
@@ -2167,6 +2239,68 @@ function renderDoneLists(){
   if(dl.length>1){const b=el('button','hmore');b.type='button';b.textContent=doneOpen?'Fechar ▴':'Ver todas ('+dl.length+') ▾';b.addEventListener('click',()=>{doneOpen=!doneOpen;renderDoneLists()});box.appendChild(b)}
 }
 $('newList').addEventListener('click',()=>{newList('Nova lista',[]);renderLists();const n=$('lBody').querySelector('.lname');if(n){n.focus();n.select()}});
+
+// ======================================================================
+// ---------- Registo rápido: botão + em todos os ecrãs ----------
+// ======================================================================
+if(!F.qa)F.qa={t:'out'};
+const QA={v:'',d:0,date:null,per:'dia'};
+function qaSel(){const q=F.qa;
+  if(q.t==='in')return F.srcs.find(x=>x.id===q.src)?q.src:(F.srcs[0]&&F.srcs[0].id);
+  if(q.t==='out')return F.cats.find(x=>x.id===q.c)?q.c:(F.cats[0]&&F.cats[0].id);
+  return state.savings.find(x=>x.id===q.sv)?q.sv:(curSav()&&curSav().id)}
+function qaShow(){const v=QA.v||'0';$('qaVal').textContent=v.replace('.',',');$('qaSave').disabled=!(money(QA.v)>0)}
+function renderQA(){
+  const q=F.qa,t=q.t;
+  [...$('qaTypes').children].forEach(b=>b.setAttribute('aria-selected',String(b.dataset.t===t)));
+  $('qaSheet').dataset.t=t;
+  $('qaWhatLabel').textContent=t==='in'?'De onde veio?':t==='out'?'Em quê?':'Para que poupança?';
+  const box=$('qaChips');box.innerHTML='';const sel=qaSel();
+  const list=t==='in'?F.srcs.map(x=>[x.id,x.emoji||'💰',x.name]):t==='out'?F.cats.map(x=>[x.id,x.emoji||'✨',x.name]):state.savings.map(x=>[x.id,'🐠',x.name||'Poupança']);
+  list.forEach(([id,em,n])=>{const b=el('button','qchip');b.type='button';b.setAttribute('aria-pressed',String(id===sel));b.innerHTML='<span></span><b></b>';b.querySelector('span').textContent=em;b.querySelector('b').textContent=n;
+    b.addEventListener('click',()=>{if(t==='in'){q.src=id;const sr=F.srcs.find(x=>x.id===id);if(sr&&+sr.expected>0&&!QA.v){QA.v=String(+sr.expected);QA.per='mes';qaShow()}}else if(t==='out')q.c=id;else q.sv=id;save();renderQA()});box.appendChild(b)});
+  $('qaPerWrap').hidden=t!=='in';
+  const pr=$('qaPer');pr.innerHTML='';[['dia','Um dia'],['semana','Uma semana'],['mes','Um mês']].forEach(([k,n])=>{const b=el('button','qchip small');b.type='button';b.textContent=n;b.setAttribute('aria-pressed',String(QA.per===k));b.addEventListener('click',()=>{QA.per=k;renderQA()});pr.appendChild(b)});
+  let people=state.axos.map(a=>[a.id,a.name||'Sem nome',a.body]);
+  if(t==='save'){const sv=state.savings.find(x=>x.id===sel);people=people.filter(p=>isMember(sv,p[0]))}else people.push(['','Conjunto','#fff']);
+  if(!people.some(p=>p[0]===q.w))q.w=people[0]?people[0][0]:'';
+  $('qaWhoWrap').hidden=people.length<2;$('qaWhoLabel').textContent=t==='in'?'Quem recebeu?':t==='out'?'Quem pagou?':'Quem guardou?';
+  const wb=$('qaWho');wb.innerHTML='';people.forEach(([id,n,c])=>{const b=el('button','pchip');b.type='button';b.setAttribute('aria-pressed',String(q.w===id));b.innerHTML='<i></i><span></span>';b.querySelector('i').style.background=c;b.querySelector('span').textContent=n;b.addEventListener('click',()=>{q.w=id;save();renderQA()});wb.appendChild(b)});
+  [...$('qaDate').querySelectorAll('[data-d]')].forEach(b=>b.setAttribute('aria-pressed',String(!QA.date&&+b.dataset.d===QA.d)));
+  $('qaDate').querySelector('.qaPick').classList.toggle('on',!!QA.date);
+  $('qaSave').textContent=t==='in'?'Guardar o que entrou':t==='out'?'Guardar o gasto':'Guardar na poupança';
+  qaShow();
+}
+(function keys(){const k=$('qaKeys');['1','2','3','4','5','6','7','8','9',',','0','⌫'].forEach(x=>{const b=el('button','key');b.type='button';b.textContent=x;b.setAttribute('aria-label',x==='⌫'?'Apagar':x===','?'Vírgula':x);
+  b.addEventListener('click',()=>qaKey(x));k.appendChild(b)})})();
+function qaKey(x){let v=QA.v;
+  if(x==='⌫')v=v.slice(0,-1);
+  else if(x===','||x==='.'){if(!v.includes('.'))v=(v||'0')+'.'}
+  else{if(v.includes('.')&&v.split('.')[1].length>=2)return;if(v==='0')v='';if(v.replace('.','').length>=7)return;v+=x}
+  QA.v=v;qaShow()}
+function openQA(type){if(type)F.qa.t=type;QA.v='';QA.d=0;QA.date=null;QA.per='dia';$('qaDateIn').value='';$('qaSheet').hidden=false;document.body.classList.add('noscroll');renderQA();setTimeout(()=>$('qaClose').focus(),60)}
+function closeQA(){$('qaSheet').hidden=true;document.body.classList.remove('noscroll');$('fab').focus()}
+function qaWhen(){if(QA.date){const [y,m,d]=QA.date.split('-').map(Number);const n=new Date();return new Date(y,m-1,d,n.getHours(),n.getMinutes()).getTime()}return Date.now()-QA.d*864e5}
+$('fab').addEventListener('click',()=>openQA());
+$('qaClose').addEventListener('click',closeQA);$('qaBack').addEventListener('click',closeQA);
+$('qaTypes').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b)return;F.qa.t=b.dataset.t;save();renderQA()});
+$('qaDate').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(!b)return;QA.d=+b.dataset.d;QA.date=null;$('qaDateIn').value='';renderQA()});
+$('qaDateIn').addEventListener('change',e=>{QA.date=e.target.value||null;renderQA()});
+document.addEventListener('keydown',e=>{if($('qaSheet').hidden)return;if(e.key==='Escape'){closeQA();return}
+  if(document.activeElement&&document.activeElement.tagName==='INPUT')return;
+  if(/^[0-9]$/.test(e.key))qaKey(e.key);else if(e.key===','||e.key==='.')qaKey(',');else if(e.key==='Backspace')qaKey('⌫');else if(e.key==='Enter'&&!$('qaSave').disabled)$('qaSave').click()});
+$('qaSave').addEventListener('click',()=>{
+  const v=money(QA.v);if(!(v>0))return;const q=F.qa,t=q.t,id=qaSel(),ts=qaWhen(),today=!QA.date&&QA.d===0;
+  if(t==='in'){const sr=srcOf(id);F.recv.push({id:uid(),src:id,v,t:ts,w:q.w||'',per:QA.per});save();closeQA();refreshView();
+    toast((sr.emoji||'💰')+' +'+fmt(v)+' ('+sr.name+(QA.per==='semana'?', semana':QA.per==='mes'?', mês':'')+'). Este mês já entraram '+fmt(receivedM())+'.')}
+  else if(t==='out'){const c=catOf(id);F.spends.push({id:uid(),c:id,v,t:ts,w:q.w||''});save();closeQA();refreshView();
+    const sm=catMonth(c),b=+c.budget||0;toast((c.emoji||'✨')+' '+fmt(v)+' em '+c.name+'.'+(b?(sm>b?' Passou '+fmt(sm-b)+' do orçamento.':' Vais em '+fmt(sm)+' de '+fmt(b)+'.'):''))}
+  else{const k=state.savings.findIndex(x=>x.id===id);if(k<0)return;const sv=state.savings[k];const w=q.w||(state.axos[0]&&state.axos[0].id);closeQA();
+    if(today&&state.view==='poupancas'){if(state.cur!==k){state.cur=k;rebuildAll(true);renderScene()}const ai=state.axos.findIndex(a=>a.id===w);if(ai>=0)state.sel=ai;addMoney(v)}
+    else{sv.by[w]=Math.round(((sv.by[w]||0)+v)*100)/100;sv.log.push({id:uid(),a:w,v,t:ts});if(sv.log.length>60)sv.log.shift();save();refreshView();
+      const lf=Math.max(0,goalOf(sv)-savedOf(sv));toast('🐷 +'+fmt(v)+' em '+(sv.name||'poupança')+'. '+(lf>0?'Faltam '+fmt(lf)+'.':'Objetivo alcançado! 🎉'))}}
+});
+function refreshView(){const v=state.view;if(v==='inicio')renderHome();else if(v==='dia')renderLists();else if(v==='poupancas'){rebuildAll();renderScene();renderPanel()}else if(v==='simular')renderSim();else if(v==='aprender')renderLearn()}
 showView(state.view);
 
 // ---------- Boas-vindas (primeira vez que a app abre) ----------
