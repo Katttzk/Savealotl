@@ -531,6 +531,9 @@ body.noscroll .fab{display:none}
 .fpill .em{font-size:1.3rem}
 .fpill b{color:#2f9e6e;font:800 1rem "Baloo 2",Nunito,sans-serif}
 .fpill.done{border-style:solid;border-color:var(--line);opacity:.7;cursor:default}
+.noteIn{width:100%;margin:0 0 10px;padding:10px 12px;border-radius:14px;font:600 .95rem Nunito,sans-serif}
+#qaNoteWrap[hidden]{display:none}
+.hrow .hnote{grid-column:1/-1}
 </style>
 </head>
 <body>
@@ -577,6 +580,7 @@ body.noscroll .fab{display:none}
         <div class="row"><h2>Gastos do dia a dia</h2><button type="button" class="mini-edit" id="editCats">✎ Categorias</button></div>
         <p class="note">Escreve o valor e toca na categoria. Leva dois segundos.</p>
         <div class="quickSpend"><input type="number" id="spAmt" min="0.01" step="any" inputmode="decimal" placeholder="0,00" aria-label="Valor gasto"><span>€</span></div>
+        <input type="text" id="spNote" class="noteIn" maxlength="40" list="notesOut" placeholder="Onde? (opcional) Ex.: Action, Continente" aria-label="Onde foi o gasto">
         <div class="payer" id="payer" aria-label="Quem pagou"></div>
         <div class="catGrid" id="catGrid"></div>
         <div class="split"><div><small>Hoje</small><b id="spToday"></b></div><div><small>Este mês</small><b id="spMonth"></b></div></div>
@@ -818,6 +822,7 @@ body.noscroll .fab{display:none}
     <div class="sheetBody">
       <div class="qaAmt" aria-live="polite"><span id="qaVal">0</span><small>€</small></div>
       <div class="keypad" id="qaKeys"></div>
+      <div id="qaNoteWrap"><input type="text" id="qaNote" class="noteIn" maxlength="40" aria-label="Nome do registo"></div>
       <span class="flabel" id="qaWhatLabel"></span>
       <div class="qaRow" id="qaChips"></div>
       <div id="qaPerWrap"><span class="flabel">Este valor é de…</span><div class="qaRow" id="qaPer"></div></div>
@@ -1813,11 +1818,11 @@ function renderHist(kind){
   const isInc=kind==='inc',arr=isInc?F.recv:F.spends,wrap=$(isInc?'incHist':'spHist');wrap.innerHTML='';
   const list=[...arr].sort((a,b)=>b.t-a.t);
   if(!list.length){wrap.innerHTML='<p class="note" style="margin:8px 0 0">Ainda não há registos.</p>';return}
-  const info=e=>{const c=isInc?srcOf(e.src):catOf(e.c);return {em:c.emoji||'✨',name:(e.note?e.note:c.name)+(e.per==='semana'?' (semana)':e.per==='mes'?' (mês)':''),who:whoName(e.w)}};
+  const info=e=>{const c=isInc?srcOf(e.src):catOf(e.c);return {em:c.emoji||'✨',name:(e.note?e.note:c.name)+(e.per==='semana'?' (semana)':e.per==='mes'?' (mês)':''),who:whoName(e.w),cat:e.note?c.name:''}};
   const dS=new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'});
   const last=list[0],li0=info(last);const top=el('div','hlast');
   top.innerHTML='<span class="hem"></span><div class="htx"><small class="hk"></small><span class="hn"></span></div><b></b><button type="button" class="hmore"></button>';
-  top.querySelector('.hem').textContent=li0.em;top.querySelector('.hk').textContent='Último'+(li0.who?', '+li0.who:'')+', '+dS.format(new Date(last.t));top.querySelector('.hn').textContent=li0.name;
+  top.querySelector('.hem').textContent=li0.em;top.querySelector('.hk').textContent=['Último',li0.cat,li0.who,dS.format(new Date(last.t))].filter(Boolean).join(', ');top.querySelector('.hn').textContent=li0.name;
   top.querySelector('b').textContent=(isInc?'+':'')+fmt(last.v);
   const mb=top.querySelector('.hmore');mb.textContent=histOpen[kind]?'Fechar ▴':'Ver tudo ('+list.length+') ▾';mb.setAttribute('aria-expanded',String(histOpen[kind]));
   mb.addEventListener('click',()=>{histOpen[kind]=!histOpen[kind];histEdit=null;renderHist(kind)});wrap.appendChild(top);
@@ -1830,11 +1835,11 @@ function renderHist(kind){
     const inf=info(e);
     if(histEdit!==e.id){
       const li=el('li','hrow2');li.innerHTML='<button type="button" class="hopen"><span class="hem"></span><span class="htx"><span class="hn"></span><small></small></span><b></b><span class="hpen" aria-hidden="true">✎</span></button>';
-      li.querySelector('.hem').textContent=inf.em;li.querySelector('.hn').textContent=inf.name;li.querySelector('small').textContent=(inf.who?inf.who+', ':'')+dS.format(new Date(e.t));
+      li.querySelector('.hem').textContent=inf.em;li.querySelector('.hn').textContent=inf.name;li.querySelector('small').textContent=[inf.cat,inf.who,dS.format(new Date(e.t))].filter(Boolean).join(', ');
       li.querySelector('b').textContent=(isInc?'+':'')+fmt(e.v);li.querySelector('.hopen').setAttribute('aria-label','Editar '+inf.name+', '+fmt(e.v));
       li.querySelector('.hopen').addEventListener('click',()=>{histEdit=e.id;renderHist(kind)});ul.appendChild(li);return}
     const li=el('li','hrow');
-    li.innerHTML=`<select class="hs"></select><select class="hw"></select><input class="hd" type="date"><label class="hvl"><input class="hv" type="number" min="0.01" step="any" inputmode="decimal"> €</label><div class="hbtns"><button type="button" class="hdel">Apagar</button><button type="button" class="hok">Pronto</button></div>`;
+    li.innerHTML=`<input class="hnote" type="text" maxlength="40"><select class="hs"></select><select class="hw"></select><input class="hd" type="date"><label class="hvl"><input class="hv" type="number" min="0.01" step="any" inputmode="decimal"> €</label><div class="hbtns"><button type="button" class="hdel">Apagar</button><button type="button" class="hok">Pronto</button></div>`;
     const q=x=>li.querySelector(x);
     const opts=isInc?F.srcs:F.cats;q('.hs').innerHTML=opts.map(o=>`<option value="${o.id}"></option>`).join('');[...q('.hs').options].forEach((o,n)=>o.textContent=(opts[n].emoji||'')+' '+opts[n].name);
     const cid=isInc?e.src:e.c;if(!opts.some(o=>o.id===cid)){const o=document.createElement('option');o.value=cid||'';o.textContent=isInc?'💰 Outro':'✨ Sem categoria';q('.hs').appendChild(o)}
@@ -1845,6 +1850,8 @@ function renderHist(kind){
     q('.hs').addEventListener('change',ev=>{if(isInc)e.src=ev.target.value;else e.c=ev.target.value;save()});
     q('.hw').addEventListener('change',ev=>{e.w=ev.target.value;save()});
     q('.hd').addEventListener('change',ev=>{const [y,m,d]=ev.target.value.split('-').map(Number);if(y&&m&&d){const o=new Date(e.t);e.t=new Date(y,m-1,d,o.getHours(),o.getMinutes()).getTime();save()}});
+    q('.hnote').value=e.note||'';q('.hnote').placeholder=isInc?'Nome (opcional), ex.: cliente':'Nome (opcional), ex.: Action';q('.hnote').setAttribute('aria-label','Nome do registo');
+    q('.hnote').addEventListener('change',ev=>{const v=ev.target.value.trim();if(v)e.note=v;else delete e.note;save()});
     q('.hv').addEventListener('change',ev=>{const v=money(ev.target.value);if(v>0){e.v=v;save()}else ev.target.value=e.v});
     q('.hok').addEventListener('click',()=>{histEdit=null;renderHome()});
     q('.hdel').addEventListener('click',()=>{const i=arr.indexOf(e);if(i>=0)arr.splice(i,1);histEdit=null;save();renderHome();toast(isInc?'Recebimento apagado.':'Gasto apagado.')});
@@ -1914,9 +1921,9 @@ function renderSpend(){
 function addSpend(c){
   const inp=$('spAmt'),v=money(inp.value);
   if(!(v>0)){inp.focus();toast('Escreve primeiro quanto gastaste, depois toca na categoria.');return}
-  F.spends.push({id:uid(),c:c.id,v,t:Date.now(),w:F.payer||''});inp.value='';save();renderHome();
+  const nt=$('spNote').value.trim();const sp={id:uid(),c:c.id,v,t:Date.now(),w:F.payer||''};if(nt)sp.note=nt;F.spends.push(sp);inp.value='';$('spNote').value='';save();renderHome();
   const s=catMonth(c),b=+c.budget||0;
-  toast((c.emoji||'✨')+' '+fmt(v)+' em '+c.name+'.'+(b?(s>b?' Passou '+fmt(s-b)+' do orçamento deste mês.':' Vais em '+fmt(s)+' de '+fmt(b)+'.'):''));
+  toast((c.emoji||'✨')+' '+fmt(v)+(nt?': '+nt:'')+' ('+c.name+').'+(b?(s>b?' Passou '+fmt(s-b)+' do orçamento deste mês.':' Vais em '+fmt(s)+' de '+fmt(b)+'.'):''));
 }
 $('editCats').addEventListener('click',()=>{editCats=!editCats;renderSpend()});
 $('spAmt').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();toast('Agora toca na categoria.')}});
@@ -2255,6 +2262,8 @@ function renderQA(){
   [...$('qaTypes').children].forEach(b=>b.setAttribute('aria-selected',String(b.dataset.t===t)));
   $('qaSheet').dataset.t=t;
   $('qaWhatLabel').textContent=t==='in'?'De onde veio?':t==='out'?'Em quê?':'Para que poupança?';
+  $('qaNoteWrap').hidden=t==='save';$('qaNote').placeholder=t==='in'?'Nome (opcional), ex.: cliente ou trabalho':'Onde? (opcional) Ex.: Action, Continente';
+  $('qaNote').setAttribute('list',t==='in'?'notesIn':'notesOut');
   const box=$('qaChips');box.innerHTML='';const sel=qaSel();
   const list=t==='in'?F.srcs.map(x=>[x.id,x.emoji||'💰',x.name]):t==='out'?F.cats.map(x=>[x.id,x.emoji||'✨',x.name]):state.savings.map(x=>[x.id,'🐠',x.name||'Poupança']);
   list.forEach(([id,em,n])=>{const b=el('button','qchip');b.type='button';b.setAttribute('aria-pressed',String(id===sel));b.innerHTML='<span></span><b></b>';b.querySelector('span').textContent=em;b.querySelector('b').textContent=n;
@@ -2278,7 +2287,7 @@ function qaKey(x){let v=QA.v;
   else if(x===','||x==='.'){if(!v.includes('.'))v=(v||'0')+'.'}
   else{if(v.includes('.')&&v.split('.')[1].length>=2)return;if(v==='0')v='';if(v.replace('.','').length>=7)return;v+=x}
   QA.v=v;qaShow()}
-function openQA(type){if(type)F.qa.t=type;QA.v='';QA.d=0;QA.date=null;QA.per='dia';$('qaDateIn').value='';$('qaSheet').hidden=false;document.body.classList.add('noscroll');renderQA();setTimeout(()=>$('qaClose').focus(),60)}
+function openQA(type){if(type)F.qa.t=type;$('qaNote').value='';QA.v='';QA.d=0;QA.date=null;QA.per='dia';$('qaDateIn').value='';$('qaSheet').hidden=false;document.body.classList.add('noscroll');renderQA();setTimeout(()=>$('qaClose').focus(),60)}
 function closeQA(){$('qaSheet').hidden=true;document.body.classList.remove('noscroll');$('fab').focus()}
 function qaWhen(){if(QA.date){const [y,m,d]=QA.date.split('-').map(Number);const n=new Date();return new Date(y,m-1,d,n.getHours(),n.getMinutes()).getTime()}return Date.now()-QA.d*864e5}
 $('fab').addEventListener('click',()=>openQA());
@@ -2291,15 +2300,23 @@ document.addEventListener('keydown',e=>{if($('qaSheet').hidden)return;if(e.key==
   if(/^[0-9]$/.test(e.key))qaKey(e.key);else if(e.key===','||e.key==='.')qaKey(',');else if(e.key==='Backspace')qaKey('⌫');else if(e.key==='Enter'&&!$('qaSave').disabled)$('qaSave').click()});
 $('qaSave').addEventListener('click',()=>{
   const v=money(QA.v);if(!(v>0))return;const q=F.qa,t=q.t,id=qaSel(),ts=qaWhen(),today=!QA.date&&QA.d===0;
-  if(t==='in'){const sr=srcOf(id);F.recv.push({id:uid(),src:id,v,t:ts,w:q.w||'',per:QA.per});save();closeQA();refreshView();
-    toast((sr.emoji||'💰')+' +'+fmt(v)+' ('+sr.name+(QA.per==='semana'?', semana':QA.per==='mes'?', mês':'')+'). Este mês já entraram '+fmt(receivedM())+'.')}
-  else if(t==='out'){const c=catOf(id);F.spends.push({id:uid(),c:id,v,t:ts,w:q.w||''});save();closeQA();refreshView();
-    const sm=catMonth(c),b=+c.budget||0;toast((c.emoji||'✨')+' '+fmt(v)+' em '+c.name+'.'+(b?(sm>b?' Passou '+fmt(sm-b)+' do orçamento.':' Vais em '+fmt(sm)+' de '+fmt(b)+'.'):''))}
+  const nt=$('qaNote').value.trim();
+  if(t==='in'){const sr=srcOf(id);const r={id:uid(),src:id,v,t:ts,w:q.w||'',per:QA.per};if(nt)r.note=nt;F.recv.push(r);save();closeQA();refreshView();
+    toast((sr.emoji||'💰')+' +'+fmt(v)+' ('+(nt?nt+', ':'')+sr.name+(QA.per==='semana'?', semana':QA.per==='mes'?', mês':'')+'). Este mês já entraram '+fmt(receivedM())+'.')}
+  else if(t==='out'){const c=catOf(id);const sp={id:uid(),c:id,v,t:ts,w:q.w||''};if(nt)sp.note=nt;F.spends.push(sp);save();closeQA();refreshView();
+    const sm=catMonth(c),b=+c.budget||0;toast((c.emoji||'✨')+' '+fmt(v)+(nt?': '+nt:'')+' ('+c.name+').'+(b?(sm>b?' Passou '+fmt(sm-b)+' do orçamento.':' Vais em '+fmt(sm)+' de '+fmt(b)+'.'):''))}
   else{const k=state.savings.findIndex(x=>x.id===id);if(k<0)return;const sv=state.savings[k];const w=q.w||(state.axos[0]&&state.axos[0].id);closeQA();
     if(today&&state.view==='poupancas'){if(state.cur!==k){state.cur=k;rebuildAll(true);renderScene()}const ai=state.axos.findIndex(a=>a.id===w);if(ai>=0)state.sel=ai;addMoney(v)}
     else{sv.by[w]=Math.round(((sv.by[w]||0)+v)*100)/100;sv.log.push({id:uid(),a:w,v,t:ts});if(sv.log.length>60)sv.log.shift();save();refreshView();
       const lf=Math.max(0,goalOf(sv)-savedOf(sv));toast('🐷 +'+fmt(v)+' em '+(sv.name||'poupança')+'. '+(lf>0?'Faltam '+fmt(lf)+'.':'Objetivo alcançado! 🎉'))}}
 });
+function fillNotes(){const mk=(arr,id)=>{const seen=new Set(),out=[];[...arr].sort((a,b)=>b.t-a.t).forEach(x=>{if(x.note&&!seen.has(x.note.toLowerCase())){seen.add(x.note.toLowerCase());out.push(x.note)}});
+  let dl=document.getElementById(id);if(!dl){dl=document.createElement('datalist');dl.id=id;document.body.appendChild(dl)}dl.innerHTML='';out.slice(0,40).forEach(n=>{const o=document.createElement('option');o.value=n;dl.appendChild(o)})};
+  mk(F.spends,'notesOut');mk(F.recv,'notesIn')}
+function noteMatch(note,isInc){const n=note.trim().toLowerCase();if(!n)return null;const arr=isInc?F.recv:F.spends;const hit=[...arr].sort((a,b)=>b.t-a.t).find(x=>x.note&&x.note.toLowerCase()===n);return hit?{id:isInc?hit.src:hit.c,note:hit.note}:null}
+$('qaNote').addEventListener('change',e=>{const t=F.qa.t;const m=noteMatch(e.target.value,t==='in');if(m){e.target.value=m.note;if(t==='in')F.qa.src=m.id;else F.qa.c=m.id;renderQA()}});
+$('spNote').addEventListener('change',e=>{const m=noteMatch(e.target.value,false);if(m)e.target.value=m.note});
+$('spNote').addEventListener('focus',fillNotes);$('qaNote').addEventListener('focus',fillNotes);
 function refreshView(){const v=state.view;if(v==='inicio')renderHome();else if(v==='dia')renderLists();else if(v==='poupancas'){rebuildAll();renderScene();renderPanel()}else if(v==='simular')renderSim();else if(v==='aprender')renderLearn()}
 showView(state.view);
 
