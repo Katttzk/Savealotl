@@ -559,6 +559,10 @@ body.noscroll .fab{display:none}
 .mascot .mFace .eyes{transform-box:fill-box;transform-origin:center;animation:mBlink 4.2s infinite}
 @keyframes mBlink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
 @media (prefers-reduced-motion:reduce){.mascot *{animation:none!important}.mascot .mDrop{opacity:1}}
+.bizTag{font:700 .76rem Nunito,sans-serif;padding:3px 9px;border-radius:999px;border:2px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
+.bizTag[aria-pressed="true"]{border-color:#f5a623;background:#fff4dc;color:#b45309}
+.bizLine{margin:0 0 10px;font-size:.84rem;font-weight:700;color:#b45309}
+.bizLine[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -575,6 +579,7 @@ body.noscroll .fab{display:none}
         <p class="big" id="leftMonth"></p>
         <p class="note" id="perDay"></p>
         <div class="sumGrid" id="sumGrid"></div>
+        <p class="bizLine" id="bizLine" hidden></p>
         <button type="button" class="simBtn" data-go="simular">🧮 Recebi dinheiro: onde guardo?</button>
         <button type="button" class="tipBtn" id="tipOfDay" data-go="aprender"></button>
       </section>
@@ -1692,7 +1697,7 @@ function seedFin(){
   const cats=[{id:'c1',emoji:'🛒',name:'Supermercado',budget:0,ess:true},{id:'c2',emoji:'🐾',name:'Animais',budget:0,ess:true},
     {id:'c3',emoji:'☕',name:'Cafés e restaurantes',budget:0,ess:false},{id:'c4',emoji:'⛽',name:'Combustível e transportes',budget:0,ess:true},
     {id:'c5',emoji:'🏠',name:'Casa',budget:0,ess:true},{id:'c6',emoji:'💊',name:'Saúde',budget:0,ess:true},
-    {id:'c7',emoji:'🎉',name:'Lazer',budget:0,ess:false},{id:'c8',emoji:'🛍️',name:'Compras',budget:0,ess:false},{id:'c9',emoji:'✨',name:'Outros',budget:0,ess:false}];
+    {id:'c7',emoji:'🎉',name:'Lazer',budget:0,ess:false},{id:'c8',emoji:'🛍️',name:'Compras',budget:0,ess:false},{id:'c9',emoji:'✨',name:'Outros',budget:0,ess:false},{id:'c10',emoji:'🏪',name:'Negócio',budget:0,ess:false,biz:true}];
   return {period:'mes',payer:a0,plan:null,planMode:'juntas',
     srcs:[{id:'f1',emoji:'💼',name:'Salário',expected:0},{id:'f2',emoji:'💶',name:'Trabalho do dia',expected:0},{id:'f3',emoji:'🎁',name:'Extras',expected:0}],
     recv:[],bills:[],cats,spends:[],lists:[]};
@@ -1707,6 +1712,8 @@ if(!state.fin){state.fin=seedFin();save()}
   delete f.incomes;save()}}
 if(!state.view)state.view='inicio';
 const F=state.fin;
+// Quem já tinha dados ganha a categoria "Negócio" uma única vez (se a apagar, não volta).
+if(!F.bizAdded){F.bizAdded=true;if(Array.isArray(F.cats)&&!F.cats.some(c=>c.biz||/neg[óo]cio/i.test(c.name||'')))F.cats.push({id:'c'+uid(),emoji:'🏪',name:'Negócio',budget:0,ess:false,biz:true});save()}
 if(!F.startedAt){const ts=[...(F.recv||[]),...(F.spends||[])].map(x=>x.t);F.startedAt=ts.length?Math.min(...ts):Date.now()}
 function trackDays(){const d=new Date(),ms=new Date(d.getFullYear(),d.getMonth(),1).getTime(),sd=new Date(F.startedAt);const st=Math.max(ms,new Date(sd.getFullYear(),sd.getMonth(),sd.getDate()).getTime());
   return Math.max(1,Math.floor((new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()-st)/864e5)+1)}
@@ -1729,6 +1736,9 @@ function incomeNow(){const k=MK();let v=receivedM();F.srcs.forEach(x=>{if(+x.exp
 const billsM=()=>F.bills.reduce((a,b)=>a+(+b.amount||0),0);
 const spendsIn=k=>F.spends.filter(s=>mKey(new Date(s.t))===k);
 const spentM=()=>spendsIn(MK()).reduce((a,s)=>a+s.v,0);
+const paidBillsM=()=>{const k=MK();return F.bills.filter(b=>b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0)};
+const bizSpentM=()=>spendsIn(MK()).filter(x=>catOf(x.c).biz).reduce((a,x)=>a+x.v,0)+(()=>{const k=MK();return F.bills.filter(b=>b.biz&&b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0)})();
+const bizBillsM=()=>F.bills.filter(b=>b.biz).reduce((a,b)=>a+(+b.amount||0),0);
 const catOf=id=>F.cats.find(c=>c.id===id)||{emoji:'✨',name:'Sem categoria',budget:0,ess:false};
 const whoName=id=>{const a=state.axos.find(x=>x.id===id);return a?(a.name||'Sem nome'):''};
 function savedThisMonth(){let s=0;const k=MK();state.savings.forEach(sv=>(sv.log||[]).forEach(m=>{if(mKey(new Date(m.t))===k)s+=m.v}));return s}
@@ -1790,8 +1800,9 @@ function renderHome(){
   const recv=receivedM();
   const billLeft=F.bills.filter(b=>!b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0);
   $('sumGrid').innerHTML='';
-  [['Recebido',fmt(recv),M>recv+.5?'faltam receber '+fmt(M-recv):'este mês'],['Despesas fixas',fmt(B),!F.bills.length?'ainda sem contas':billLeft>0?'faltam '+fmt(billLeft):'tudo pago ✓'],['Gastos do mês',fmt(V),'até hoje'],['Poupança',fmt(S),'plano: '+fmt(P)]]
+  [['Recebido',fmt(recv),M>recv+.5?'faltam receber '+fmt(M-recv):'este mês'],['Despesas fixas',fmt(B),!F.bills.length?'ainda sem contas':billLeft>0?'faltam '+fmt(billLeft):'tudo pago ✓'],['Gastos do mês',fmt(V+paidBillsM()),paidBillsM()>0?'contas pagas '+fmt(paidBillsM())+' + dia a dia '+fmt(V):'até hoje'],['Poupança',fmt(S),'plano: '+fmt(P)]]
     .forEach(([a,b,c])=>{const t=el('div','tile');t.innerHTML='<small></small><b></b><span></span>';t.querySelector('small').textContent=a;t.querySelector('b').textContent=b;t.querySelector('span').textContent=c;$('sumGrid').appendChild(t)});
+  {const bz=bizSpentM();$('bizLine').hidden=!(bz>0);$('bizLine').textContent='🏪 Negócio este mês: '+fmt(bz)+' (já incluído nos gastos do mês)'}
   const tp=tipsFor()[0];$('tipOfDay').hidden=!tp;if(tp)$('tipOfDay').textContent=tp.i+' '+tp.t+' Ver mais dicas ›';
   renderIncome();renderBills();renderSpend();refreshHomeAq();
 }
@@ -1899,10 +1910,11 @@ function renderBills(){
     const p=!!b.paid[k],late=!p&&b.due&&b.due<day;const li=el('li','fi'+(p?' done':'')+(late?' late':''));
     li.innerHTML=`<button type="button" class="tick">${p?'✓':''}</button><div class="fmain"><input class="fname" type="text" maxlength="40" placeholder="Ex.: Renda">
       <div class="frow"><input class="famt" type="number" min="0" step="any" inputmode="decimal"><span class="eu">€</span>
-      <label class="fdue">dia <input class="fdn" type="number" min="1" max="31" inputmode="numeric" placeholder="–"></label><span class="badge"></span></div></div><button type="button" class="ckx">×</button>`;
+      <label class="fdue">dia <input class="fdn" type="number" min="1" max="31" inputmode="numeric" placeholder="–"></label><button type="button" class="bizTag">🏪 Negócio</button><span class="badge"></span></div></div><button type="button" class="ckx">×</button>`;
     const q=s=>li.querySelector(s);
     q('.tick').setAttribute('aria-label',(p?'Desmarcar':'Marcar')+' como pago');q('.tick').setAttribute('aria-pressed',String(p));
     q('.fname').value=b.name;q('.famt').value=b.amount;q('.fdn').value=b.due||'';q('.fdn').setAttribute('aria-label','Dia do pagamento');
+    q('.bizTag').setAttribute('aria-pressed',String(!!b.biz));q('.bizTag').addEventListener('click',()=>{b.biz=!b.biz;save();renderHome()});
     q('.badge').textContent=p?'Pago':late?'Já passou do dia '+b.due:b.due?(b.due===day?'Vence hoje':'Vence dia '+b.due):'';
     q('.tick').addEventListener('click',()=>{if(p)delete b.paid[k];else b.paid[k]=true;save();renderHome();if(!p)toast('✓ '+(b.name||'Despesa')+' liquidada. Faltam '+fmt(F.bills.filter(x=>!x.paid[k]).reduce((a,x)=>a+(+x.amount||0),0))+' este mês.')});
     q('.fname').addEventListener('change',e=>{b.name=e.target.value.trim()||b.name;save()});
@@ -1930,12 +1942,13 @@ function renderSpend(){
   F.cats.forEach(c=>{
     const li=el('li','bud'+(editCats?' editing':''));
     if(editCats){
-      li.innerHTML=`<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da categoria"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Orçamento mensal" placeholder="Sem limite"> €/mês</label><label class="bess"><input type="checkbox"> Essencial</label><button type="button" class="ckx">×</button>`;
-      const q=s=>li.querySelector(s);q('.bem').value=c.emoji||'';q('.bname').value=c.name;q('.bbud').value=c.budget||'';q('.bess input').checked=!!c.ess;
+      li.innerHTML=`<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da categoria"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Orçamento mensal" placeholder="Sem limite"> €/mês</label><label class="bess"><input type="checkbox"> Essencial</label><label class="bess bizc"><input type="checkbox"> Negócio</label><button type="button" class="ckx">×</button>`;
+      const q=s=>li.querySelector(s);q('.bem').value=c.emoji||'';q('.bname').value=c.name;q('.bbud').value=c.budget||'';q('.bess input').checked=!!c.ess;q('.bizc input').checked=!!c.biz;
       q('.bem').addEventListener('change',e=>{c.emoji=e.target.value.trim()||'✨';save();renderSpend()});
       q('.bname').addEventListener('change',e=>{c.name=e.target.value.trim()||c.name;save();renderSpend()});
       q('.bbud').addEventListener('change',e=>{c.budget=Math.max(0,money(e.target.value)||0);save()});
       q('.bess input').addEventListener('change',e=>{c.ess=e.target.checked;save()});
+      q('.bizc input').addEventListener('change',e=>{c.biz=e.target.checked;save();renderHome()});
       q('.ckx').setAttribute('aria-label','Apagar categoria '+c.name);q('.ckx').addEventListener('click',()=>{F.cats=F.cats.filter(x=>x!==c);save();renderSpend()});
     }else{
       const s=catMonth(c),b=+c.budget||0,pace=b?s/(b*Math.max(frac,.1)):0;
@@ -2051,15 +2064,16 @@ function renderLearn(){
     ul.appendChild(li)});
   // Para onde vai o dinheiro
   const w=$('whereChart');w.innerHTML='';const base=Math.max(M,B+V+P,1);
-  const rows=[['Despesas fixas',B,'#9b6fd0'],...F.cats.map(c=>[(c.emoji||'')+' '+c.name,catProjected(c),c.ess?'#8fb4f4':'#ff9fbe']).filter(r=>r[1]>0).sort((a,b)=>b[1]-a[1]),['Poupança',P,'#5fc7a3']];
+  const rows=[['Despesas fixas',B,'#9b6fd0'],...F.cats.map(c=>[(c.emoji||'')+' '+c.name,catProjected(c),c.biz?'#f5a623':c.ess?'#8fb4f4':'#ff9fbe']).filter(r=>r[1]>0).sort((a,b)=>b[1]-a[1]),['Poupança',P,'#5fc7a3']];
   const rest=M-rows.reduce((a,r)=>a+r[1],0);if(rest>0)rows.push(['Folga',rest,'#e6daf3']);
   rows.forEach(([n,v,c])=>{const r=el('div','wrow');r.innerHTML='<span class="wn"></span><div class="wt"><span></span></div><b></b>';r.querySelector('.wn').textContent=n;
     const f=r.querySelector('.wt span');f.style.width=Math.min(100,v/base*100)+'%';f.style.background=c;r.querySelector('b').textContent=Math.round(v/base*100)+'%';w.appendChild(r)});
-  const need=B+F.cats.filter(c=>c.ess).reduce((a,c)=>a+catProjected(c),0),want=F.cats.filter(c=>!c.ess).reduce((a,c)=>a+catProjected(c),0);
+  const bizP=F.cats.filter(c=>c.biz).reduce((a,c)=>a+catProjected(c),0)+bizBillsM();
+  const need=B-bizBillsM()+F.cats.filter(c=>c.ess&&!c.biz).reduce((a,c)=>a+catProjected(c),0),want=F.cats.filter(c=>!c.ess&&!c.biz).reduce((a,c)=>a+catProjected(c),0);
   const R=$('rule');R.innerHTML='';
-  [['Essencial',need,50,'#8fb4f4'],['Gostos pessoais',want,30,'#ff9fbe'],['Poupança',P,20,'#5fc7a3']].forEach(([n,v,ref,c])=>{const pc=M?v/M*100:0;const r=el('div','rr');
-    r.innerHTML='<div class="brow"><b></b><span></span></div><div class="rt"><span></span><i></i></div>';r.querySelector('b').textContent=n;r.querySelector('.brow span').textContent=Math.round(pc)+'% (referência '+ref+'%)';
-    const f=r.querySelector('.rt span');f.style.width=Math.min(100,pc)+'%';f.style.background=c;r.querySelector('.rt i').style.left=ref+'%';R.appendChild(r)});
+  [['Essencial',need,50,'#8fb4f4'],['Gostos pessoais',want,30,'#ff9fbe'],['Poupança',P,20,'#5fc7a3'],...(bizP>0?[['Negócio (à parte)',bizP,null,'#f5a623']]:[])].forEach(([n,v,ref,c])=>{const pc=M?v/M*100:0;const r=el('div','rr');
+    r.innerHTML='<div class="brow"><b></b><span></span></div><div class="rt"><span></span><i></i></div>';r.querySelector('b').textContent=n;r.querySelector('.brow span').textContent=Math.round(pc)+'%'+(ref?' (referência '+ref+'%)':' (fora da regra)');
+    const f=r.querySelector('.rt span');f.style.width=Math.min(100,pc)+'%';f.style.background=c;if(ref!=null)r.querySelector('.rt i').style.left=ref+'%';else r.querySelector('.rt i').remove();R.appendChild(r)});
   // Divisão justa
   const per={};const ks=[MK(),...prevMonths()];F.recv.forEach(r=>{if(r.w&&ks.includes(mKey(new Date(r.t))))per[r.w]=(per[r.w]||0)+r.v});
   const ppl=state.axos.filter(a=>per[a.id]>0);$('fairPanel').hidden=ppl.length<2;
