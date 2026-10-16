@@ -587,6 +587,13 @@ body.noscroll .fab{display:none}
 .tabrow .tn{font-weight:700}
 .cat.editTile{border-style:dashed;color:var(--muted)}
 #tabbar button[hidden]{display:none}
+
+.optList{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:8px}
+.optList li{background:var(--chip);border:2px solid var(--line);border-radius:14px;padding:10px 12px}
+.optT{width:100%}
+.optT .sw{flex:none}
+.optT span:last-child{font-weight:700;font-size:.92rem}
+#blkBody .budgets{margin-top:6px}
 </style>
 </head>
 <body>
@@ -599,7 +606,7 @@ body.noscroll .fab{display:none}
       <section class="homeAq" data-sec="aq" aria-label="Aquário do mês"><div id="homeAqSlot"></div>
         <div class="aqInfo"><div class="brow"><b>Aquário do mês</b><span id="homeAqPct"></span></div><div class="mini"><span id="homeAqBar"></span></div><small id="homeAqHint"></small></div></section>
       <section class="panel summary" data-sec="sum" aria-label="Resumo do mês">
-        <div class="row"><h2>Este mês</h2></div>
+        <div class="row"><h2>Este mês</h2><button type="button" class="mini-edit" data-edit="sum">✎ Editar</button></div>
         <p class="big" id="leftMonth"></p>
         <p class="note" id="perDay"></p>
         <div class="sumGrid" id="sumGrid"></div>
@@ -608,7 +615,7 @@ body.noscroll .fab{display:none}
         <button type="button" class="tipBtn" id="tipOfDay" data-go="aprender"></button>
       </section>
       <section class="panel" data-sec="inc" aria-label="Rendimentos">
-        <div class="row"><h2>Rendimentos</h2><button type="button" class="mini-edit" id="editSrc">✎ Editar nomes</button></div>
+        <div class="row"><h2>Rendimentos</h2><button type="button" class="mini-edit" id="editSrc" data-edit="inc">✎ Editar</button></div>
         <div class="incTop">
           <div class="seg small" id="periodSeg" role="tablist"><button type="button" role="tab" data-p="dia">Hoje</button><button type="button" role="tab" data-p="semana">Semana</button><button type="button" role="tab" data-p="mes">Mês</button></div>
           <small id="incLabel"></small><b id="incTotal"></b><span id="incExp"></span>
@@ -623,7 +630,7 @@ body.noscroll .fab{display:none}
         <div class="hist" id="incHist"></div>
       </section>
       <section class="panel" data-sec="bills" aria-label="Despesas fixas">
-        <h2>Despesas fixas</h2>
+        <div class="row"><h2>Despesas fixas</h2><button type="button" class="mini-edit" data-edit="bills">✎ Editar</button></div>
         <p class="note">Renda, luz, água, internet, seguros… Marca com ✓ o que já está pago este mês.</p>
         <div class="split"><div><small>Liquidado</small><b id="billPaid"></b></div><div><small>Falta liquidar</small><b id="billLeft" class="accent"></b></div></div>
         <div class="bar" aria-hidden="true"><span id="billBar"></span></div>
@@ -631,7 +638,7 @@ body.noscroll .fab{display:none}
         <button type="button" class="addLine" id="billAdd">+ Adicionar despesa</button>
       </section>
       <section class="panel" data-sec="spend" aria-label="Gastos do dia a dia">
-        <div class="row"><h2>Gastos do dia a dia</h2><button type="button" class="mini-edit" id="editCats">✎ Editar nomes</button></div>
+        <div class="row"><h2>Gastos do dia a dia</h2><button type="button" class="mini-edit" id="editCats" data-edit="spend">✎ Editar</button></div>
         <p class="note">Escreve o valor e toca na categoria. Leva dois segundos.</p>
         <div class="quickSpend"><input type="number" id="spAmt" min="0.01" step="any" inputmode="decimal" placeholder="0,00" aria-label="Valor gasto"><span>€</span></div>
         <input type="text" id="spNote" class="noteIn" maxlength="40" list="notesOut" placeholder="Onde? (opcional) Ex.: Action, Continente" aria-label="Onde foi o gasto">
@@ -644,7 +651,7 @@ body.noscroll .fab{display:none}
     </div>
   </section>
   <section class="view" id="v-dia" hidden>
-    <p class="dateLine">Dia-a-dia</p>
+    <div class="homeTop"><p class="dateLine">Dia-a-dia</p><button type="button" class="mini-edit" data-edit="dia">✎ Editar</button></div>
     <div class="stack">
       <div class="mascot" id="mDia"></div>
       <section class="panel" aria-label="Listas de compras">
@@ -660,6 +667,7 @@ body.noscroll .fab{display:none}
     </div>
   </section>
   <section class="view" id="v-poupancas" hidden>
+    <div class="homeTop"><p class="dateLine">Poupanças</p><button type="button" class="mini-edit" data-edit="sav">✎ Editar</button></div>
     <p class="intro">Cada poupança tem o seu aquário. Os axolotls nascem bebés e tristinhos, crescem, ficam felizes e o aquário vai-se completando à medida que poupam.</p>
   <div class="grid">
     <div class="stageWrap">
@@ -695,10 +703,10 @@ body.noscroll .fab{display:none}
           <ul class="cklist" id="checklist"></ul>
           <div class="ckAdd"><input type="text" id="ckName" maxlength="30" placeholder="Ex.: Voos" aria-label="O que falta pagar"><input type="number" id="ckAmt" min="0.01" step="any" inputmode="decimal" placeholder="€" aria-label="Valor em euros"><button type="button" id="ckAddBtn">Juntar</button></div>
         </div>
-        <span class="flabel">De quem é esta poupança?</span>
+        <span class="flabel" id="ownersLbl">De quem é esta poupança?</span>
         <div class="payer" id="owners" aria-label="De quem é esta poupança"></div>
         <p class="note" id="ownersNote" style="margin:-4px 0 12px"></p>
-        <span class="flabel">Quem está a poupar?</span>
+        <span class="flabel" id="whoLbl">Quem está a poupar?</span>
         <div class="payer" id="who"></div>
         <div class="row" style="margin:0"><span class="flabel" id="addLabel"></span><button type="button" class="mini-edit" id="editQuick">✎ Editar botões</button></div>
         <div class="addRow" id="addRow"></div>
@@ -722,7 +730,7 @@ body.noscroll .fab{display:none}
   </div>
   </section>
   <section class="view" id="v-simular" hidden>
-    <p class="dateLine">Simulador</p>
+    <div class="homeTop"><p class="dateLine">Simulador</p><button type="button" class="mini-edit" data-edit="sim">✎ Editar</button></div>
     <div class="stack">
       <div class="mascot" id="mSim"></div>
       <section class="panel" aria-label="O que entrou e o que tens de pagar">
@@ -734,6 +742,7 @@ body.noscroll .fab{display:none}
         <span class="flabel" style="margin-top:14px">2. O que tens de pagar com este dinheiro?</span>
         <ul class="simBills" id="simBills"></ul>
         <label class="simLine">Outro pagamento <input type="number" id="simOther" min="0" step="any" inputmode="decimal" placeholder="0"> €</label>
+        <div id="simStep3">
         <span class="flabel" style="margin-top:14px">3. Dia a dia e folga</span>
         <label class="toggle"><input type="checkbox" id="simDaily"><span class="sw"></span><span>Este dinheiro também tem de pagar o dia a dia</span></label>
         <div class="simDaily" id="simDailyBox">
@@ -743,6 +752,7 @@ body.noscroll .fab{display:none}
         </div>
         <div class="row" style="margin:12px 0 4px"><span class="flabel" style="margin:0">Folga para imprevistos</span><b id="simMarginTxt"></b></div>
         <input type="range" id="simMargin" min="0" max="30" step="5" aria-label="Percentagem de folga" style="width:100%;accent-color:var(--accent)">
+        </div>
       </section>
       <section class="panel" aria-label="Importância das poupanças">
         <h2>4. Qual é a mais importante?</h2>
@@ -757,15 +767,15 @@ body.noscroll .fab{display:none}
         <div id="simActions">
           <span class="flabel" style="margin-top:14px">Guardar em nome de</span>
           <div class="payer" id="simWho"></div>
-          <label class="toggle"><input type="checkbox" id="simRec"><span class="sw"></span><span>Registar também este valor nos rendimentos</span></label>
-          <select id="simSrc" class="simSel" aria-label="Fonte do rendimento"></select>
+          <div id="simRecWrap"><label class="toggle"><input type="checkbox" id="simRec"><span class="sw"></span><span>Registar também este valor nos rendimentos</span></label>
+          <select id="simSrc" class="simSel" aria-label="Fonte do rendimento"></select></div>
           <button type="button" class="cta" id="simApply"></button>
         </div>
       </section>
     </div>
   </section>
   <section class="view" id="v-aprender" hidden>
-    <p class="dateLine">Aprender</p>
+    <div class="homeTop"><p class="dateLine">Aprender</p><button type="button" class="mini-edit" data-edit="learn">✎ Editar</button></div>
     <div class="stack">
       <div class="mascot" id="mLearn"></div>
       <section class="panel" aria-label="Plano realista">
@@ -903,6 +913,13 @@ body.noscroll .fab{display:none}
       <ul class="homeList" id="homeTabs"></ul>
       <button type="button" class="ghostBtn" id="homeReset" style="margin-top:12px">Repor o padrão</button>
     </div>
+  </div>
+</div>
+<div class="sheet" id="blkSheet" hidden>
+  <div class="sheetBack" id="blkBack"></div>
+  <div class="sheetBox" role="dialog" aria-modal="true" aria-labelledby="blkTitle">
+    <div class="sheetHead"><h2 id="blkTitle">Editar</h2><button type="button" class="sheetClose" id="blkClose" aria-label="Fechar">×</button></div>
+    <div class="sheetBody" id="blkBody"></div>
   </div>
 </div>
 <nav class="tabbar" id="tabbar" aria-label="Menu principal">
@@ -1839,7 +1856,7 @@ function renderHome(){
   const billLeft=F.bills.filter(b=>!b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0);
   $('sumGrid').innerHTML='';
   [['Recebido',fmt(recv),M>recv+.5?'faltam receber '+fmt(M-recv):'este mês'],['Despesas fixas',fmt(B),!F.bills.length?'ainda sem contas':billLeft>0?'faltam '+fmt(billLeft):'tudo pago ✓'],['Gastos do mês',fmt(V+paidBillsM()),paidBillsM()>0?'contas pagas '+fmt(paidBillsM())+' + dia a dia '+fmt(V):'até hoje'],['Poupança',fmt(S),'plano: '+fmt(P)]]
-    .forEach(([a,b,c])=>{const t=el('div','tile');t.innerHTML='<small></small><b></b><span></span>';t.querySelector('small').textContent=a;t.querySelector('b').textContent=b;t.querySelector('span').textContent=c;$('sumGrid').appendChild(t)});
+    .forEach(([a,b,c],ix)=>{const t=el('div','tile');t.dataset.k=['rec','bills','spent','save'][ix];t.innerHTML='<small></small><b></b><span></span>';t.querySelector('small').textContent=a;t.querySelector('b').textContent=b;t.querySelector('span').textContent=c;$('sumGrid').appendChild(t)});
   {const bz=bizSpentM();$('bizLine').hidden=!(bz>0);$('bizLine').textContent='🏪 Negócio este mês: '+fmt(bz)+' (já incluído nos gastos do mês)'}
   const tp=tipsFor()[0];$('tipOfDay').hidden=!tp;if(tp)$('tipOfDay').textContent=tp.i+' '+tp.t+' Ver mais dicas ›';
   renderIncome();renderBills();renderSpend();refreshHomeAq();updateSecSums();
@@ -1849,8 +1866,10 @@ let editSrc=false;
 function periodStart(p){const d=new Date();if(p==='dia')return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
   if(p==='semana'){const wd=(d.getDay()+6)%7;return new Date(d.getFullYear(),d.getMonth(),d.getDate()-wd).getTime()}return new Date(d.getFullYear(),d.getMonth(),1).getTime()}
 function renderIncome(){
-  const per=F.period==='dia'||F.period==='semana'?F.period:'mes';
-  [...$('periodSeg').children].forEach(b=>b.setAttribute('aria-selected',String(b.dataset.p===per)));
+  const AP=['dia','semana','mes'].filter(x=>OPT('inc','p_'+x));if(!AP.length)AP.push('mes');
+  let per=F.period==='dia'||F.period==='semana'?F.period:'mes';if(!AP.includes(per))per=AP.includes('mes')?'mes':AP[0];
+  $('periodSeg').style.display=AP.length<2?'none':'';
+  [...$('periodSeg').children].forEach(b=>{b.style.display=AP.includes(b.dataset.p)?'':'none';b.setAttribute('aria-selected',String(b.dataset.p===per))});
   const from=periodStart(per),got=F.recv.filter(r=>r.t>=from).reduce((a,r)=>a+r.v,0),gotM=receivedM(),exp=expectedM();
   $('incLabel').textContent=per==='dia'?'Recebido hoje':per==='semana'?'Recebido esta semana':'Recebido este mês';
   $('incTotal').textContent=fmt(got);
@@ -1869,7 +1888,7 @@ function renderIncome(){
   const g=$('srcGrid');g.innerHTML='';g.hidden=editSrc;
   F.srcs.forEach(sr=>{const b=el('button','cat');b.type='button';b.innerHTML='<span class="em"></span><span class="cn"></span>';b.querySelector('.em').textContent=sr.emoji||'💰';b.querySelector('.cn').textContent=sr.name;
     b.addEventListener('click',()=>addRecv(sr));g.appendChild(b)});
-  {const t=el('button','cat editTile');t.type='button';t.innerHTML='<span class="em">✎</span><span class="cn">Mudar nomes</span>';t.addEventListener('click',()=>{editSrc=true;renderIncome()});g.appendChild(t)}
+  {const t=el('button','cat editTile');t.type='button';t.innerHTML='<span class="em">✎</span><span class="cn">Editar</span>';t.addEventListener('click',()=>openBlock('inc','names'));g.appendChild(t)}
   const ed=$('srcEdit');ed.innerHTML='';ed.hidden=!editSrc;
   if(editSrc){F.srcs.forEach(sr=>{const li=el('li','bud editing');
       li.innerHTML=`<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da fonte"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" placeholder="variável" aria-label="Previsto por mês"> €/mês previstos</label><button type="button" class="ckx">×</button>`;
@@ -1880,7 +1899,7 @@ function renderIncome(){
       q('.ckx').setAttribute('aria-label','Apagar fonte '+sr.name);q('.ckx').addEventListener('click',()=>{F.srcs=F.srcs.filter(x=>x!==sr);save();renderHome()});ed.appendChild(li)});
     const li=el('li');const b=el('button','addLine');b.type='button';b.textContent='+ Nova fonte';b.addEventListener('click',()=>{F.srcs.push({id:uid(),emoji:'💰',name:'Nova fonte',expected:0});save();renderIncome();const l=[...ed.querySelectorAll('.bname')].pop();if(l){l.focus();l.select()}});li.appendChild(b);ed.appendChild(li);
     const n=el('li');n.innerHTML='<p class="note" style="margin:0">Toca num nome para o mudar: Salário, Biscates, Pensão, Vendas… o que fizer sentido para ti. Se recebes sempre o mesmo (um salário), escreve o valor previsto. Se varia de dia para dia, deixa em branco: a app calcula pela média.</p>';ed.appendChild(n)}
-  $('editSrc').textContent=editSrc?'✓ Pronto':'✎ Editar nomes';
+  $('editSrc').textContent=editSrc?'✓ Pronto':'✎ Editar';
   renderHist('inc');
 }
 function addRecv(sr){
@@ -1890,7 +1909,6 @@ function addRecv(sr){
   toast((sr.emoji||'💰')+' +'+fmt(v)+(whoName(w)?' para '+whoName(w):'')+'. Este mês já entraram '+fmt(receivedM())+'.');
 }
 $('periodSeg').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;F.period=b.dataset.p;save();renderIncome()});
-$('editSrc').addEventListener('click',()=>{editSrc=!editSrc;renderIncome()});
 $('inAmt').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();toast('Agora toca na fonte.')}});
 // Histórico curto: mostra só o último registo, abre para ver, editar e apagar tudo
 const histOpen={inc:false,sp:false};let histEdit=null;
@@ -1974,7 +1992,7 @@ function renderSpend(){
   const g=$('catGrid');g.innerHTML='';
   F.cats.forEach(c=>{const b=el('button','cat');b.type='button';b.innerHTML='<span class="em"></span><span class="cn"></span>';b.querySelector('.em').textContent=c.emoji||'✨';b.querySelector('.cn').textContent=c.name;
     b.addEventListener('click',()=>addSpend(c));g.appendChild(b)});
-  {const t=el('button','cat editTile');t.type='button';t.innerHTML='<span class="em">✎</span><span class="cn">Mudar nomes</span>';t.addEventListener('click',()=>{editCats=true;renderSpend();$('budgets').scrollIntoView({block:'center',behavior:'smooth'})});g.appendChild(t)}
+  {const t=el('button','cat editTile');t.type='button';t.innerHTML='<span class="em">✎</span><span class="cn">Editar</span>';t.addEventListener('click',()=>openBlock('spend','names'));g.appendChild(t)}
   const mon=spendsIn(k);
   $('spToday').textContent=fmt(mon.filter(s=>new Date(s.t).toDateString()===today).reduce((a,s)=>a+s.v,0));
   $('spMonth').textContent=fmt(mon.reduce((a,s)=>a+s.v,0));
@@ -1998,7 +2016,7 @@ function renderSpend(){
     }
     ul.appendChild(li)});
   if(editCats){const li=el('li');const b=el('button','addLine');b.type='button';b.textContent='+ Nova categoria';b.addEventListener('click',()=>{F.cats.push({id:uid(),emoji:'✨',name:'Nova categoria',budget:0,ess:false});save();renderSpend();const l=[...document.querySelectorAll('.bname')].pop();if(l){l.focus();l.select()}});li.appendChild(b);ul.appendChild(li)}
-  $('editCats').textContent=editCats?'✓ Pronto':'✎ Editar nomes';
+  $('editCats').textContent=editCats?'✓ Pronto':'✎ Editar';
   renderHist('sp');
 }
 function addSpend(c){
@@ -2008,7 +2026,6 @@ function addSpend(c){
   const s=catMonth(c),b=+c.budget||0;
   toast((c.emoji||'✨')+' '+fmt(v)+(nt?': '+nt:'')+' ('+c.name+').'+(b?(s>b?' Passou '+fmt(s-b)+' do orçamento deste mês.':' Vais em '+fmt(s)+' de '+fmt(b)+'.'):''));
 }
-$('editCats').addEventListener('click',()=>{editCats=!editCats;renderSpend()});
 $('spAmt').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();toast('Agora toca na categoria.')}});
 
 // ---------- Aquário do mês ----------
@@ -2072,7 +2089,7 @@ function tipsFor(){
    if(top&&!over.includes(top[0])){const h=(HINT.find(([r])=>r.test(top[0].name))||[0,'Pequenas mudanças na categoria que mais pesa rendem mais do que cortar em tudo um pouco.'])[1];
      T.push({i:top[0].emoji||'✨',t:'A maior fatia dos gastos do dia a dia é '+top[0].name.toLowerCase()+' (cerca de '+fmt(top[1])+' por mês). Poupar 10% aí são '+fmt(top[1]*.1)+' por mês. '+h})}}
   if(cap<=0)T.push({i:'🌱',t:'Este mês as contas estão justas e não fica margem. Tudo bem: começa com 1 € por dia. Ao fim de um ano são 365 €, e o hábito é o que mais conta.'});
-  if(!F.cats.some(c=>c.budget>0))T.push({i:'🎯',t:'Dá um orçamento mensal às categorias de gastos (em ✎ Editar nomes). Assim a app avisa antes de o dinheiro fugir.'});
+  if(!F.cats.some(c=>c.budget>0))T.push({i:'🎯',t:'Dá um orçamento mensal às categorias de gastos (em ✎ Editar). Assim a app avisa antes de o dinheiro fugir.'});
   return T;
 }
 function renderLearn(){
@@ -2144,12 +2161,12 @@ function simCompute(){
   const chosen=F.bills.filter(b=>SM.bills[b.id]&&!b.paid[k]);
   const bills=chosen.reduce((a,b)=>a+(+b.amount||0),0)+Math.max(0,money(SM.other)||0);
   const sug=Math.round(dailyNeed()*(SM.days||1)*100)/100;
-  const daily=SM.daily?(SM.dailyAmt!=null&&SM.dailyAmt!==''?Math.max(0,money(SM.dailyAmt)||0):sug):0;
+  const daily=SM.daily&&OPT('sim','step3')?(SM.dailyAmt!=null&&SM.dailyAmt!==''?Math.max(0,money(SM.dailyAmt)||0):sug):0;
   const avail=Math.round((recv-bills-daily)*100)/100;
   const simWho=SM.who??F.payer??(state.axos[0]&&state.axos[0].id);
   const goals=state.savings.filter(s=>isMember(s,simWho)).map(s=>({s,rem:Math.max(0,goalOf(s)-savedOf(s)),w:prioOf(s),a:0})).filter(g=>g.rem>0&&g.w>0);
   const maxSave=goals.reduce((a,g)=>a+g.rem,0);
-  let toSave=avail>0?Math.floor(avail*(1-SM.margin/100)*2)/2:0;toSave=Math.min(toSave,maxSave);
+  let toSave=avail>0?Math.floor(avail*(1-(OPT('sim','step3')?SM.margin:10)/100)*2)/2:0;toSave=Math.min(toSave,maxSave);
   let left=toSave;
   if(SM.mode==='primeiro'){goals.sort((x,y)=>y.w-x.w);for(const g of goals){const a=Math.min(g.rem,left);g.a=a;left-=a;if(left<=0)break}}
   else{
@@ -2220,7 +2237,7 @@ function renderSimResult(){
   else{
     if(R.folga>0)note('🛟','Ficam '+fmt(R.folga)+' de folga. Guardar até ao último cêntimo costuma acabar em levantamentos quando aparece um imprevisto.');
     if(P>0)note('📅','Com isto, este mês ficam guardados '+fmt(S0+R.saved)+' do plano de '+fmt(P)+' ('+Math.round((S0+R.saved)/P*100)+'%).'+(S0+R.saved>=P?' Plano do mês cumprido!':''));
-    if(!SM.daily&&R.recv>0){const fr=incomeM()-billsM()-spentM()-Math.max(P,S0);if(fr<dailyNeed()*3)note('⚠️','O resto do mês está apertado. Se este dinheiro também tem de pagar o dia a dia, ativa a opção no passo 3 para uma simulação mais realista.')}
+    if(!SM.daily&&OPT('sim','step3')&&R.recv>0){const fr=incomeM()-billsM()-spentM()-Math.max(P,S0);if(fr<dailyNeed()*3)note('⚠️','O resto do mês está apertado. Se este dinheiro também tem de pagar o dia a dia, ativa a opção no passo 3 para uma simulação mais realista.')}
     if(SM.mode!=='prazo'&&state.savings.some(x=>{const d=dlInfo(x);return d&&d.rem>0}))note('📆','Tens poupanças com prazo. Experimenta "Pelo prazo" para dar mais a quem tem a data mais apertada.');
     if(!R.goals.length)note('ℹ️','Todas as poupanças estão concluídas ou em pausa. Cria uma nova poupança ou muda a importância.');
     if(R.saved>=R.maxSave&&R.maxSave>0)note('🎉','Este valor chega para terminar todas as poupanças ativas!');
@@ -2479,7 +2496,7 @@ const DEF_ORDER=['aq','sum','spend','bills','inc'];
 const TAB_LIST=[['dia','🛒','Dia-a-dia'],['poupancas','🐠','Poupanças'],['simular','🧮','Simular'],['aprender','💡','Aprender']];
 function HU(){if(!state.homeUI||typeof state.homeUI!=='object')state.homeUI={};const h=state.homeUI;
   if(!Array.isArray(h.order))h.order=DEF_ORDER.slice();h.order=h.order.filter(id=>DEF_ORDER.includes(id));DEF_ORDER.forEach(id=>{if(!h.order.includes(id))h.order.push(id)});
-  h.off=h.off||{};h.col=h.col||{};h.names=h.names||{};h.tabs=h.tabs||{};return h}
+  h.o=h.o||{};h.off=h.off||{};h.col=h.col||{};h.names=h.names||{};h.tabs=h.tabs||{};return h}
 function setupSections(){
   SECS.forEach(([id,def,coll])=>{
     const sec=document.querySelector('#v-inicio [data-sec="'+id+'"]');if(!sec||sec.dataset.ready||!coll)return;sec.dataset.ready='1';
@@ -2539,6 +2556,119 @@ $('homeClose').addEventListener('click',closeHomeSheet);$('homeBack').addEventLi
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('homeSheet').hidden)closeHomeSheet()});
 $('homeReset').addEventListener('click',()=>{state.homeUI={};save();applyHome();renderHomeSheet();toast('Início reposto como estava.')});
 setupSections();applyHome();
+
+// ======================================================================
+// ---------- ✎ Editar: cada bloco escolhe o que mostra ----------
+// ======================================================================
+const OPTS={
+ sum:{title:'Este mês',root:'[data-sec="sum"]',list:[
+  {k:'perday',l:'Frase "cerca de X por dia"',hide:['#perDay']},
+  {k:'t_rec',l:'Quadrado "Recebido"',hide:['.tile[data-k="rec"]']},
+  {k:'t_bills',l:'Quadrado "Despesas fixas"',hide:['.tile[data-k="bills"]']},
+  {k:'t_spent',l:'Quadrado "Gastos do mês"',hide:['.tile[data-k="spent"]']},
+  {k:'t_save',l:'Quadrado "Poupança"',hide:['.tile[data-k="save"]']},
+  {k:'biz',l:'Linha do negócio',hide:['#bizLine']},
+  {k:'simbtn',l:'Botão "Recebi dinheiro: onde guardo?"',hide:['.simBtn']},
+  {k:'tip',l:'Dica do dia',hide:['#tipOfDay']}]},
+ inc:{title:'Rendimentos',root:'[data-sec="inc"]',periods:true,names:'src',list:[
+  {k:'bar',l:'Valor previsto e barra de progresso',hide:['#incExp','.incTop .bar']},
+  {k:'pills',l:'Atalho "já recebi o salário?"',hide:['#fixedPills']},
+  {k:'who',l:'Perguntar quem recebeu',hide:['#inWho']},
+  {k:'hist',l:'Histórico',hide:['#incHist']},
+  {k:'help',l:'Textos de ajuda',hide:['.note']}]},
+ bills:{title:'Despesas fixas',root:'[data-sec="bills"]',list:[
+  {k:'sum',l:'Liquidado, falta liquidar e barra',hide:['.split','.bar']},
+  {k:'due',l:'Dia de pagamento e avisos',hide:['.fdue','.badge']},
+  {k:'biz',l:'Etiqueta "Negócio"',hide:['.bizTag']},
+  {k:'help',l:'Textos de ajuda',hide:['.note']}]},
+ spend:{title:'Gastos do dia a dia',root:'[data-sec="spend"]',names:'cat',list:[
+  {k:'who',l:'Perguntar quem pagou',hide:['#payer']},
+  {k:'note',l:'Campo "Onde?" (nome do gasto)',hide:['#spNote']},
+  {k:'today',l:'Total de hoje',hide:['.split>div:nth-child(1)']},
+  {k:'month',l:'Total do mês',hide:['.split>div:nth-child(2)']},
+  {k:'bud',l:'Lista de categorias com barras de orçamento',hide:['#budgets']},
+  {k:'hist',l:'Histórico',hide:['#spHist']},
+  {k:'help',l:'Textos de ajuda',hide:['.note']}]},
+ dia:{title:'Dia-a-dia',root:'#v-dia',list:[
+  {k:'mascot',l:'Mascote animada',hide:['.mascot']},
+  {k:'cat',l:'Categoria de gasto da lista',hide:['.lhead select']},
+  {k:'who',l:'Perguntar quem pagou',hide:['.lwho']},
+  {k:'carry',l:'Pergunta "passar os itens que faltam"',hide:['.lcarry']},
+  {k:'done',l:'Listas concluídas',hide:['section[aria-label="Listas concluídas"]']},
+  {k:'help',l:'Textos de ajuda',hide:['.note']}]},
+ sav:{title:'Poupanças',root:'#v-poupancas',list:[
+  {k:'dl',l:'Prazo',hide:['.dl']},
+  {k:'check',l:'Checklist do objetivo',hide:['.check']},
+  {k:'owners',l:'"De quem é esta poupança?"',hide:['#owners','#ownersLbl','#ownersNote']},
+  {k:'who',l:'"Quem está a poupar?"',hide:['#who','#whoLbl']},
+  {k:'by',l:'Quem já guardou',hide:['#byWho']},
+  {k:'log',l:'Últimos movimentos',hide:['#logWrap']},
+  {k:'help',l:'Textos de ajuda',hide:['.note','.intro']}]},
+ sim:{title:'Simulador',root:'#v-simular',list:[
+  {k:'mascot',l:'Mascote animada',hide:['.mascot']},
+  {k:'step3',l:'Passo 3: dia a dia e folga (desligado, a folga fica em 10%)',hide:['#simStep3']},
+  {k:'rec',l:'Opção "Registar também nos rendimentos"',hide:['#simRecWrap']},
+  {k:'help',l:'Textos de ajuda',hide:['.note']}]},
+ learn:{title:'Aprender',root:'#v-aprender',list:[
+  {k:'mascot',l:'Mascote animada',hide:['.mascot']},
+  {k:'plan',l:'O teu plano realista',hide:['section[aria-label="Plano realista"]']},
+  {k:'tips',l:'Dicas para ti',hide:['section[aria-label="Dicas"]']},
+  {k:'where',l:'Para onde vai o dinheiro',hide:['section[aria-label="Para onde vai o dinheiro"]']},
+  {k:'fair',l:'Divisão justa a dois',hide:['#fairPanel']},
+  {k:'lessons',l:'Mini-lições',hide:['section[aria-label="Mini-lições"]']}]}
+};
+function OPT(b,k){const o=HU().o;return !(o&&o[b]&&o[b][k]===false)}
+(function genCSS(){let css='';Object.values(OPTS).forEach(d=>d.list.forEach(it=>(it.hide||[]).forEach(sel=>{css+=d.root+'[data-o-'+it.k+'="0"] '+sel+'{display:none!important}\n'})));
+  const st=document.createElement('style');st.textContent=css;document.head.appendChild(st)})();
+function applyOpts(){Object.entries(OPTS).forEach(([b,d])=>{const root=document.querySelector(d.root);if(!root)return;
+  d.list.forEach(it=>{if(OPT(b,it.k))root.removeAttribute('data-o-'+it.k);else root.setAttribute('data-o-'+it.k,'0')})})}
+let BLK=null;
+function openBlock(id,focus){if(!OPTS[id])return;BLK=id;renderBlock();$('blkSheet').hidden=false;document.body.classList.add('noscroll');
+  setTimeout(()=>{if(focus==='names'){const n=$('blkBody').querySelector('#namesEd');if(n)n.scrollIntoView({block:'start'})}else $('blkClose').focus()},80)}
+function closeBlock(){$('blkSheet').hidden=true;document.body.classList.remove('noscroll');BLK=null}
+function buildNames(kind){
+  const wrap=el('div');wrap.id='namesEd';
+  const hd=el('span','flabel');hd.style.cssText='display:block;margin-top:18px';hd.textContent=kind==='src'?'Fontes de rendimento':'Categorias de gastos';wrap.appendChild(hd);
+  const nt=el('p','note');nt.textContent=kind==='src'?'Toca num nome para o mudar: Salário, Biscates, Pensão, Vendas… Se recebes sempre o mesmo, escreve o valor previsto; se varia de dia para dia, deixa em branco.':'Dá o nome que quiseres a cada categoria e, se quiseres, um orçamento por mês. Marca "Essencial" ou "Negócio" para a app perceber melhor.';wrap.appendChild(nt);
+  const ul=el('ul','budgets');wrap.appendChild(ul);const arr=kind==='src'?F.srcs:F.cats;
+  const again=()=>{const sc=$('blkBody').scrollTop;renderBlock();$('blkBody').scrollTop=sc};
+  arr.forEach(it=>{const li=el('li','bud editing');
+    li.innerHTML=kind==='src'
+      ?'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da fonte"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" placeholder="variável" aria-label="Previsto por mês"> €/mês previstos</label><button type="button" class="ckx">×</button>'
+      :'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da categoria"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Orçamento mensal" placeholder="Sem limite"> €/mês</label><label class="bess"><input type="checkbox" class="cEss"> Essencial</label><label class="bess bizc"><input type="checkbox" class="cBiz"> Negócio</label><button type="button" class="ckx">×</button>';
+    const q=x=>li.querySelector(x);q('.bem').value=it.emoji||'';q('.bname').value=it.name;q('.bbud').value=(kind==='src'?it.expected:it.budget)||'';
+    q('.bem').addEventListener('change',e=>{it.emoji=e.target.value.trim()||(kind==='src'?'💰':'✨');save();renderHome()});
+    q('.bname').addEventListener('change',e=>{const v=e.target.value.trim();if(v)it.name=v;else e.target.value=it.name;save();renderHome()});
+    q('.bbud').addEventListener('change',e=>{const v=Math.max(0,money(e.target.value)||0);if(kind==='src')it.expected=v;else it.budget=v;save();renderHome()});
+    if(kind==='cat'){q('.cEss').checked=!!it.ess;q('.cBiz').checked=!!it.biz;q('.cEss').addEventListener('change',e=>{it.ess=e.target.checked;save();renderHome()});q('.cBiz').addEventListener('change',e=>{it.biz=e.target.checked;save();renderHome()})}
+    q('.ckx').setAttribute('aria-label','Apagar '+it.name);q('.ckx').addEventListener('click',()=>{if(kind==='src')F.srcs=F.srcs.filter(x=>x!==it);else F.cats=F.cats.filter(x=>x!==it);save();renderHome();again()});
+    ul.appendChild(li)});
+  const add=el('button','addLine');add.type='button';add.textContent=kind==='src'?'+ Nova fonte':'+ Nova categoria';
+  add.addEventListener('click',()=>{if(kind==='src')F.srcs.push({id:uid(),emoji:'💰',name:'Nova fonte',expected:0});else F.cats.push({id:uid(),emoji:'✨',name:'Nova categoria',budget:0,ess:false});save();renderHome();again();
+    const l=[...$('blkBody').querySelectorAll('#namesEd .bname')].pop();if(l){l.focus();l.select()}});
+  wrap.appendChild(add);return wrap;
+}
+function renderBlock(){
+  const d=OPTS[BLK],h=HU(),box=$('blkBody');$('blkTitle').textContent='Editar: '+((BLK==='inc'||BLK==='bills'||BLK==='spend')&&h.names[BLK]||d.title);
+  box.innerHTML='';const intro=el('p','note');intro.textContent='Escolhe o que queres ver neste bloco. Isto só muda neste telemóvel, por isso cada pessoa pode ter o seu.';box.appendChild(intro);
+  const head=t=>{const p=el('span','flabel');p.style.cssText='display:block;margin-top:12px';p.textContent=t;box.appendChild(p)};
+  const row=(label,on,fn)=>{const li=el('li');li.innerHTML='<label class="toggle optT"><input type="checkbox"><span class="sw"></span><span></span></label>';li.querySelector('label span:last-child').textContent=label;
+    const cb=li.querySelector('input');cb.checked=on;cb.addEventListener('change',()=>fn(cb));return li};
+  const setOpt=(k,on)=>{h.o[BLK]=h.o[BLK]||{};if(on)delete h.o[BLK][k];else h.o[BLK][k]=false;save();applyOpts();if(BLK==='inc')renderIncome();if(BLK==='sim')renderSim()};
+  if(d.periods){head('Totais por…');const ul=el('ul','optList');
+    [['dia','Hoje'],['semana','Semana'],['mes','Mês']].forEach(([p,n])=>ul.appendChild(row(n,OPT('inc','p_'+p),cb=>{
+      const on=['dia','semana','mes'].filter(x=>x!==p&&OPT('inc','p_'+x)).length;
+      if(!cb.checked&&on===0){cb.checked=true;toast('Tem de ficar pelo menos uma opção.');return}setOpt('p_'+p,cb.checked)})));
+    box.appendChild(ul);const hp=el('p','note');hp.textContent='Se deixares só "Mês", os botões Hoje e Semana desaparecem.';box.appendChild(hp)}
+  head('O que mostrar');const ul=el('ul','optList');d.list.forEach(it=>ul.appendChild(row(it.l,OPT(BLK,it.k),cb=>setOpt(it.k,cb.checked))));box.appendChild(ul);
+  if(d.names)box.appendChild(buildNames(d.names==='src'?'src':'cat'));
+  const rb=el('button','ghostBtn');rb.type='button';rb.style.marginTop='16px';rb.textContent='Repor este bloco';
+  rb.addEventListener('click',()=>{delete h.o[BLK];save();applyOpts();if(BLK==='inc')renderIncome();if(BLK==='sim')renderSim();renderBlock();toast('Bloco reposto como estava.')});box.appendChild(rb);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-edit]');if(b)openBlock(b.dataset.edit)});
+$('blkClose').addEventListener('click',closeBlock);$('blkBack').addEventListener('click',closeBlock);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('blkSheet').hidden)closeBlock()});
+applyOpts();
 showView(state.view);
 
 // ---------- Boas-vindas (primeira vez que a app abre) ----------
