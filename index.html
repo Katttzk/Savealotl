@@ -613,6 +613,17 @@ body.reordering .stack>section{cursor:grab;touch-action:none;position:relative}
 body.reordering .stack>section *{pointer-events:none}
 body.reordering .stack>section::after{content:"≡";position:absolute;right:20px;top:50%;margin-top:-14px;font:800 1.7rem/1 Nunito,sans-serif;color:var(--muted)}
 body.reordering .stack>section.lifted{z-index:30;cursor:grabbing;border-color:var(--accent);box-shadow:0 14px 32px rgba(75,42,99,.35);will-change:transform}
+
+.cat{position:relative}
+.catGrid .cat .rm{display:none;position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:2px solid var(--surface);font:800 1rem/1 Nunito,sans-serif;align-items:center;justify-content:center;z-index:2;cursor:pointer}
+.catGrid.editing .cat .rm{display:flex}
+.catGrid.editing .editTile{display:none}
+.catGrid.editing .cat{touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+.catGrid.editing .cat:not(.lifted){animation:tileWig .3s ease-in-out infinite alternate}
+@keyframes tileWig{from{rotate:-1.3deg}to{rotate:1.3deg}}
+.catGrid .cat.lifted{z-index:20;cursor:grabbing;border-color:var(--accent);box-shadow:0 12px 26px rgba(75,42,99,.35);animation:none}
+@media (prefers-reduced-motion:reduce){.catGrid.editing .cat:not(.lifted){animation:none}}
+.ghostBtn.sm{padding:6px 12px;font-size:.8rem}
 </style>
 </head>
 <body>
@@ -1788,7 +1799,7 @@ if(!state.fin){state.fin=seedFin();save()}
 if(!state.view)state.view='inicio';
 const F=state.fin;
 // Quem já tinha dados ganha a categoria "Negócio" uma única vez (se a apagar, não volta).
-if(!F.bizAdded){F.bizAdded=true;if(Array.isArray(F.cats)&&!F.cats.some(c=>c.biz||/neg[óo]cio/i.test(c.name||'')))F.cats.push({id:'c'+uid(),emoji:'🏪',name:'Negócio',budget:0,ess:false,biz:true});save()}
+if(!F.bizAdded){F.bizAdded=true;if(Array.isArray(F.cats)&&!F.cats.some(c=>c.biz||/neg[óo]cio/i.test(c.name||'')))F.cats.push({id:'c10',emoji:'🏪',name:'Negócio',budget:0,ess:false,biz:true});save()}
 if(!F.startedAt){const ts=[...(F.recv||[]),...(F.spends||[])].map(x=>x.t);F.startedAt=ts.length?Math.min(...ts):Date.now()}
 function trackDays(){const d=new Date(),ms=new Date(d.getFullYear(),d.getMonth(),1).getTime(),sd=new Date(F.startedAt);const st=Math.max(ms,new Date(sd.getFullYear(),sd.getMonth(),sd.getDate()).getTime());
   return Math.max(1,Math.floor((new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()-st)/864e5)+1)}
@@ -1815,6 +1826,16 @@ const paidBillsM=()=>{const k=MK();return F.bills.filter(b=>b.paid[k]).reduce((a
 const bizSpentM=()=>spendsIn(MK()).filter(x=>catOf(x.c).biz).reduce((a,x)=>a+x.v,0)+(()=>{const k=MK();return F.bills.filter(b=>b.biz&&b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0)})();
 const bizBillsM=()=>F.bills.filter(b=>b.biz).reduce((a,b)=>a+(+b.amount||0),0);
 const catOf=id=>F.cats.find(c=>c.id===id)||{emoji:'✨',name:'Sem categoria',budget:0,ess:false};
+const visCats=()=>F.cats.filter(c=>!c.hidden),visSrcs=()=>F.srcs.filter(x=>!x.hidden);
+// Os dois telemóveis criavam cada um a sua categoria "Negócio" e juntavam-se duas. Fica sempre a mesma (a "c10", ou a de id mais baixo), igual nos dois.
+function dedupeBiz(){const list=F.cats.filter(c=>/^\s*neg[óo]cio\s*$/i.test(c.name||''));if(!list.length)return false;
+  const keep=list.find(c=>c.id==='c10')||list.slice().sort((a,b)=>String(a.id)<String(b.id)?-1:1)[0];const drop=list.filter(c=>c!==keep).map(c=>c.id);
+  const canon=keep.id!=='c10'&&!F.cats.some(c=>c.id==='c10'&&c!==keep);
+  if(!drop.length&&!canon)return false;
+  F.cats.forEach(c=>{if(drop.includes(c.id)&&(+c.budget||0)>(+keep.budget||0))keep.budget=c.budget});keep.biz=true;keep.hidden=list.every(c=>c.hidden);
+  const remap=new Set(drop);if(canon){remap.add(keep.id);keep.id='c10'}
+  F.spends.forEach(x=>{if(remap.has(x.c))x.c=keep.id});(F.lists||[]).forEach(l=>{if(remap.has(l.cat))l.cat=keep.id});
+  F.cats=F.cats.filter(c=>!drop.includes(c.id));return true}
 const whoName=id=>{const a=state.axos.find(x=>x.id===id);return a?(a.name||'Sem nome'):''};
 function savedThisMonth(){let s=0;const k=MK();state.savings.forEach(sv=>(sv.log||[]).forEach(m=>{if(mKey(new Date(m.t))===k)s+=m.v}));return s}
 function catMonth(c,k){return spendsIn(k||MK()).filter(s=>s.c===c.id).reduce((a,s)=>a+s.v,0)}
@@ -1899,15 +1920,18 @@ function renderIncome(){
   [...state.axos.map(a=>[a.id,a.name||'Sem nome',a.body]),['','Conjunto','#fff']].forEach(([id,n,c])=>{const b=el('button','pchip');b.type='button';b.setAttribute('aria-pressed',String((F.inWho??F.payer??'')===id));
     b.innerHTML='<i></i><span></span>';b.querySelector('i').style.background=c;b.querySelector('span').textContent=n;b.addEventListener('click',()=>{F.inWho=id;save();renderIncome()});pw.appendChild(b)});
   const fp=$('fixedPills');fp.innerHTML='';fp.hidden=editSrc;
-  F.srcs.filter(x=>+x.expected>0).forEach(x=>{const got=recvIn(MK()).filter(r=>r.src===x.id).reduce((a,r)=>a+r.v,0),miss=Math.round((+x.expected-got)*100)/100;
+  F.srcs.filter(x=>+x.expected>0&&!x.hidden).forEach(x=>{const got=recvIn(MK()).filter(r=>r.src===x.id).reduce((a,r)=>a+r.v,0),miss=Math.round((+x.expected-got)*100)/100;
     const b=el('button','fpill'+(miss<=0?' done':''));b.type='button';
     b.innerHTML='<span class="em"></span><span class="ft"></span><b></b>';b.querySelector('.em').textContent=x.emoji||'💼';
     b.querySelector('.ft').textContent=miss<=0?x.name+' deste mês':x.name+': já recebi?';b.querySelector('b').textContent=miss<=0?'✓ '+fmt(+x.expected):'+'+fmt(miss);
     if(miss>0)b.addEventListener('click',()=>{const w=F.inWho??F.payer??'';F.recv.push({id:uid(),src:x.id,v:miss,t:Date.now(),w,per:'mes'});save();renderHome();toast((x.emoji||'💼')+' '+x.name+' recebido: +'+fmt(miss)+'.')});
     else b.disabled=true;fp.appendChild(b)});
   const g=$('srcGrid');g.innerHTML='';g.hidden=editSrc;
-  F.srcs.forEach(sr=>{const b=el('button','cat');b.type='button';b.innerHTML='<span class="em"></span><span class="cn"></span>';b.querySelector('.em').textContent=sr.emoji||'💰';b.querySelector('.cn').textContent=sr.name;
-    b.addEventListener('click',()=>addRecv(sr));g.appendChild(b)});
+  visSrcs().forEach(sr=>{const b=el('button','cat');b.dataset.id=sr.id;b.type='button';b.innerHTML='<span class="em"></span><span class="cn"></span>';b.querySelector('.em').textContent=sr.emoji||'💰';b.querySelector('.cn').textContent=sr.name;
+    b.addEventListener('click',()=>{if(TE.kind==='src')return;addRecv(sr)});
+    {const rm=el('span','rm');rm.textContent='×';rm.setAttribute('role','button');rm.setAttribute('aria-label','Retirar '+sr.name);rm.addEventListener('click',ev=>{ev.stopPropagation();hideItem('src',sr)});b.appendChild(rm)}
+    g.appendChild(b)});
+  g.classList.toggle('editing',TE.kind==='src');
   {const t=el('button','cat editTile');t.type='button';t.innerHTML='<span class="em">✎</span><span class="cn">Editar</span>';t.addEventListener('click',()=>openBlock('inc','names'));g.appendChild(t)}
   const ed=$('srcEdit');ed.innerHTML='';ed.hidden=!editSrc;
   if(editSrc){F.srcs.forEach(sr=>{const li=el('li','bud editing');
@@ -1959,7 +1983,7 @@ function renderHist(kind){
     const li=el('li','hrow');
     li.innerHTML=`<input class="hnote" type="text" maxlength="40"><select class="hs"></select><select class="hw"></select><input class="hd" type="date"><label class="hvl"><input class="hv" type="number" min="0.01" step="any" inputmode="decimal"> €</label><div class="hbtns"><button type="button" class="hdel">Apagar</button><button type="button" class="hok">Pronto</button></div>`;
     const q=x=>li.querySelector(x);
-    const opts=isInc?F.srcs:F.cats;q('.hs').innerHTML=opts.map(o=>`<option value="${o.id}"></option>`).join('');[...q('.hs').options].forEach((o,n)=>o.textContent=(opts[n].emoji||'')+' '+opts[n].name);
+    const opts=(isInc?F.srcs:F.cats).filter(o=>!o.hidden||o.id===(isInc?e.src:e.c));q('.hs').innerHTML=opts.map(o=>`<option value="${o.id}"></option>`).join('');[...q('.hs').options].forEach((o,n)=>o.textContent=(opts[n].emoji||'')+' '+opts[n].name);
     const cid=isInc?e.src:e.c;if(!opts.some(o=>o.id===cid)){const o=document.createElement('option');o.value=cid||'';o.textContent=isInc?'💰 Outro':'✨ Sem categoria';q('.hs').appendChild(o)}
     q('.hs').value=cid||'';q('.hs').setAttribute('aria-label',isInc?'Fonte':'Categoria');
     whoOptions(q('.hw'),true);q('.hw').value=e.w||'';q('.hw').setAttribute('aria-label','Quem');
@@ -2010,14 +2034,17 @@ function renderSpend(){
   [...state.axos.map(a=>[a.id,a.name||'Sem nome',a.body]),['','Conjunto','#fff']].forEach(([id,n,c])=>{const b=el('button','pchip');b.type='button';b.setAttribute('aria-pressed',String((F.payer||'')===id));
     b.innerHTML='<i></i><span></span>';b.querySelector('i').style.background=c;b.querySelector('span').textContent=n;b.addEventListener('click',()=>{F.payer=id;save();renderSpend()});pay.appendChild(b)});
   const g=$('catGrid');g.innerHTML='';
-  F.cats.forEach(c=>{const b=el('button','cat');b.type='button';b.innerHTML='<span class="em"></span><span class="cn"></span>';b.querySelector('.em').textContent=c.emoji||'✨';b.querySelector('.cn').textContent=c.name;
-    b.addEventListener('click',()=>addSpend(c));g.appendChild(b)});
+  visCats().forEach(c=>{const b=el('button','cat');b.dataset.id=c.id;b.type='button';b.innerHTML='<span class="em"></span><span class="cn"></span>';b.querySelector('.em').textContent=c.emoji||'✨';b.querySelector('.cn').textContent=c.name;
+    b.addEventListener('click',()=>{if(TE.kind==='cat')return;addSpend(c)});
+    {const rm=el('span','rm');rm.textContent='×';rm.setAttribute('role','button');rm.setAttribute('aria-label','Retirar '+c.name);rm.addEventListener('click',ev=>{ev.stopPropagation();hideItem('cat',c)});b.appendChild(rm)}
+    g.appendChild(b)});
+  g.classList.toggle('editing',TE.kind==='cat');
   {const t=el('button','cat editTile');t.type='button';t.innerHTML='<span class="em">✎</span><span class="cn">Editar</span>';t.addEventListener('click',()=>openBlock('spend','names'));g.appendChild(t)}
   const mon=spendsIn(k);
   $('spToday').textContent=fmt(mon.filter(s=>new Date(s.t).toDateString()===today).reduce((a,s)=>a+s.v,0));
   $('spMonth').textContent=fmt(mon.reduce((a,s)=>a+s.v,0));
   const ul=$('budgets');ul.innerHTML='';
-  F.cats.forEach(c=>{
+  visCats().forEach(c=>{
     const li=el('li','bud'+(editCats?' editing':''));
     if(editCats){
       li.innerHTML=`<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da categoria"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Orçamento mensal" placeholder="Sem limite"> €/mês</label><label class="bess"><input type="checkbox"> Essencial</label><label class="bess bizc"><input type="checkbox"> Negócio</label><button type="button" class="ckx">×</button>`;
@@ -2229,7 +2256,7 @@ function renderSim(){
   state.axos.forEach(a=>{const b=el('button','pchip');b.type='button';b.setAttribute('aria-pressed',String(who===a.id));b.innerHTML='<i></i><span></span>';b.querySelector('i').style.background=a.body;b.querySelector('span').textContent=a.name||'Sem nome';
     b.addEventListener('click',()=>{SM.who=a.id;save();renderSim()});sw.appendChild(b)});
   $('simRec').checked=!!SM.rec;$('simSrc').hidden=!SM.rec;
-  $('simSrc').innerHTML=F.srcs.map(x=>`<option value="${x.id}"></option>`).join('');[...$('simSrc').options].forEach((o,n)=>o.textContent=(F.srcs[n].emoji||'')+' '+F.srcs[n].name);if(SM.src)$('simSrc').value=SM.src;
+  const VS=visSrcs();$('simSrc').innerHTML=VS.map(x=>`<option value="${x.id}"></option>`).join('');[...$('simSrc').options].forEach((o,n)=>o.textContent=(VS[n].emoji||'')+' '+VS[n].name);if(SM.src)$('simSrc').value=SM.src;
   renderSimResult();
 }
 function renderSimResult(){
@@ -2289,6 +2316,7 @@ $('simApply').addEventListener('click',()=>{
 // ---------- Dia-a-dia: listas de compras ----------
 // ======================================================================
 if(!Array.isArray(F.lists))F.lists=[];
+if(dedupeBiz())save();
 if(false){const sup=(F.cats.find(c=>/super/i.test(c.name))||F.cats[0]||{id:''}).id;
   F.lists=[{id:uid(),name:'Compras da semana',cat:sup,done:false,items:['Leite','Pão','Fruta','Arroz','Ovos','Ração dos animais','Detergente'].map((t,n)=>({id:uid(),t,done:n<2}))}]}
 let listSel=null,askDelList=false,doneOpen=false,carry=true;
@@ -2316,7 +2344,7 @@ function renderLists(){
       <button type="button" class="cta lok">Concluir lista</button></div>`;
   const q=x=>body.querySelector(x);
   q('.lname').value=L.name;q('.lname').addEventListener('change',e=>{L.name=e.target.value.trim()||L.name;save();renderLists()});
-  q('.lcat').innerHTML=F.cats.map(c=>`<option value="${c.id}"></option>`).join('');[...q('.lcat').options].forEach((o,n)=>o.textContent=(F.cats[n].emoji||'')+' '+F.cats[n].name);q('.lcat').value=L.cat;
+  const LC=F.cats.filter(c=>!c.hidden||c.id===L.cat);q('.lcat').innerHTML=LC.map(c=>`<option value="${c.id}"></option>`).join('');[...q('.lcat').options].forEach((o,n)=>o.textContent=(LC[n].emoji||'')+' '+LC[n].name);q('.lcat').value=L.cat;
   q('.lcat').addEventListener('change',e=>{L.cat=e.target.value;save()});
   q('.lprog span').textContent=L.items.length?done+' de '+L.items.length+' riscados':'Lista vazia';
   q('.mini span').style.width=(L.items.length?done/L.items.length*100:0)+'%';
@@ -2374,8 +2402,8 @@ $('newList').addEventListener('click',()=>{newList('Nova lista',[]);renderLists(
 if(!F.qa)F.qa={t:'out'};
 const QA={v:'',d:0,date:null,per:'dia'};
 function qaSel(){const q=F.qa;
-  if(q.t==='in')return F.srcs.find(x=>x.id===q.src)?q.src:(F.srcs[0]&&F.srcs[0].id);
-  if(q.t==='out')return F.cats.find(x=>x.id===q.c)?q.c:(F.cats[0]&&F.cats[0].id);
+  if(q.t==='in')return visSrcs().find(x=>x.id===q.src)?q.src:(visSrcs()[0]&&visSrcs()[0].id);
+  if(q.t==='out')return visCats().find(x=>x.id===q.c)?q.c:(visCats()[0]&&visCats()[0].id);
   return state.savings.find(x=>x.id===q.sv)?q.sv:(curSav()&&curSav().id)}
 function qaShow(){const v=QA.v||'0';$('qaVal').textContent=v.replace('.',',');$('qaSave').disabled=!(money(QA.v)>0)}
 function renderQA(){
@@ -2386,7 +2414,7 @@ function renderQA(){
   $('qaNoteWrap').hidden=t==='save';$('qaNote').placeholder=t==='in'?'Nome (opcional), ex.: cliente ou trabalho':'Onde? (opcional) Ex.: Action, Continente';
   $('qaNote').setAttribute('list',t==='in'?'notesIn':'notesOut');
   const box=$('qaChips');box.innerHTML='';const sel=qaSel();
-  const list=t==='in'?F.srcs.map(x=>[x.id,x.emoji||'💰',x.name]):t==='out'?F.cats.map(x=>[x.id,x.emoji||'✨',x.name]):state.savings.map(x=>[x.id,'🐠',x.name||'Poupança']);
+  const list=t==='in'?visSrcs().map(x=>[x.id,x.emoji||'💰',x.name]):t==='out'?visCats().map(x=>[x.id,x.emoji||'✨',x.name]):state.savings.map(x=>[x.id,'🐠',x.name||'Poupança']);
   list.forEach(([id,em,n])=>{const b=el('button','qchip');b.type='button';b.setAttribute('aria-pressed',String(id===sel));b.innerHTML='<span></span><b></b>';b.querySelector('span').textContent=em;b.querySelector('b').textContent=n;
     b.addEventListener('click',()=>{if(t==='in'){q.src=id;const sr=F.srcs.find(x=>x.id===id);if(sr&&+sr.expected>0&&!QA.v){QA.v=String(+sr.expected);QA.per='mes';qaShow()}}else if(t==='out')q.c=id;else q.sv=id;save();renderQA()});box.appendChild(b)});
   $('qaPerWrap').hidden=t!=='in';
@@ -2643,31 +2671,47 @@ function OPT(b,k){const o=HU().o;return !(o&&o[b]&&o[b][k]===false)}
 function applyOpts(){Object.entries(OPTS).forEach(([b,d])=>{const root=document.querySelector(d.root);if(!root)return;
   d.list.forEach(it=>{if(OPT(b,it.k))root.removeAttribute('data-o-'+it.k);else root.setAttribute('data-o-'+it.k,'0')})})}
 let BLK=null;
-function openBlock(id,focus){if(!OPTS[id])return;BLK=id;renderBlock();$('blkSheet').hidden=false;document.body.classList.add('noscroll');
+function openBlock(id,focus){if(!OPTS[id])return;BLK=id;askRepor=false;renderBlock();$('blkSheet').hidden=false;document.body.classList.add('noscroll');
   setTimeout(()=>{if(focus==='names'){const n=$('blkBody').querySelector('#namesEd');if(n)n.scrollIntoView({block:'start'})}else $('blkClose').focus()},80)}
 function closeBlock(){$('blkSheet').hidden=true;document.body.classList.remove('noscroll');BLK=null}
+const DEF_CATS=()=>[{id:'c1',emoji:'🛒',name:'Supermercado',budget:0,ess:true},{id:'c2',emoji:'🐾',name:'Animais',budget:0,ess:true},{id:'c3',emoji:'☕',name:'Cafés e restaurantes',budget:0,ess:false},{id:'c4',emoji:'⛽',name:'Combustível e transportes',budget:0,ess:true},{id:'c5',emoji:'🏠',name:'Casa',budget:0,ess:true},{id:'c6',emoji:'💊',name:'Saúde',budget:0,ess:true},{id:'c7',emoji:'🎉',name:'Lazer',budget:0,ess:false},{id:'c8',emoji:'🛍️',name:'Compras',budget:0,ess:false},{id:'c9',emoji:'✨',name:'Outros',budget:0,ess:false},{id:'c10',emoji:'🏪',name:'Negócio',budget:0,ess:false,biz:true}];
+const DEF_SRCS=()=>[{id:'f1',emoji:'💼',name:'Salário',expected:0},{id:'f2',emoji:'💶',name:'Trabalho do dia',expected:0},{id:'f3',emoji:'🎁',name:'Extras',expected:0}];
+function resetList(kind){if(kind==='cat')dedupeBiz();const defs=kind==='cat'?DEF_CATS():DEF_SRCS(),cur=kind==='cat'?F.cats:F.srcs,byId=new Map(cur.map(x=>[x.id,x]));
+  const out=defs.map(d=>{const e=byId.get(d.id);return e?Object.assign(e,{biz:false},d,{hidden:false}):d});
+  const rest=cur.filter(x=>!defs.some(d=>d.id===x.id)).map(x=>Object.assign(x,{hidden:false}));
+  if(kind==='cat')F.cats=[...out,...rest];else F.srcs=[...out,...rest]}
 function buildNames(kind){
   const wrap=el('div');wrap.id='namesEd';
-  const hd=el('span','flabel');hd.style.cssText='display:block;margin-top:18px';hd.textContent=kind==='src'?'Fontes de rendimento':'Categorias de gastos';wrap.appendChild(hd);
-  const nt=el('p','note');nt.textContent=kind==='src'?'Toca num nome para o mudar: Salário, Biscates, Pensão, Vendas… Se recebes sempre o mesmo, escreve o valor previsto; se varia de dia para dia, deixa em branco.':'Dá o nome que quiseres a cada categoria e, se quiseres, um orçamento por mês. Marca "Essencial" ou "Negócio" para a app perceber melhor.';wrap.appendChild(nt);
+  const hd=el('span','flabel');hd.style.cssText='display:block;margin-top:18px';hd.textContent=kind==='src'?'Nomes das fontes de rendimento':'Nomes das despesas';wrap.appendChild(hd);
+  const nt=el('p','note');nt.textContent=(kind==='src'?'Toca num nome para o mudar: Salário, Biscates, Pensão, Vendas… Se recebes sempre o mesmo, escreve o valor previsto; se varia, deixa em branco.':'Dá o nome que quiseres a cada despesa e, se quiseres, um orçamento por mês.')+' Para mudar a ordem ou retirar da lista, mantém o dedo num ícone no Início e arrasta; o × retira.';wrap.appendChild(nt);
   const ul=el('ul','budgets');wrap.appendChild(ul);const arr=kind==='src'?F.srcs:F.cats;
   const again=()=>{const sc=$('blkBody').scrollTop;renderBlock();$('blkBody').scrollTop=sc};
-  arr.forEach(it=>{const li=el('li','bud editing');
+  arr.filter(x=>!x.hidden).forEach(it=>{const li=el('li','bud editing');
     li.innerHTML=kind==='src'
-      ?'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da fonte"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" placeholder="variável" aria-label="Previsto por mês"> €/mês previstos</label><button type="button" class="ckx">×</button>'
-      :'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da categoria"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Orçamento mensal" placeholder="Sem limite"> €/mês</label><label class="bess"><input type="checkbox" class="cEss"> Essencial</label><label class="bess bizc"><input type="checkbox" class="cBiz"> Negócio</label><button type="button" class="ckx">×</button>';
+      ?'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da fonte"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" placeholder="variável" aria-label="Previsto por mês"> €/mês previstos</label>'
+      :'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da despesa"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Orçamento mensal" placeholder="Sem limite"> €/mês</label><label class="bess"><input type="checkbox" class="cEss"> Essencial</label><label class="bess bizc"><input type="checkbox" class="cBiz"> Negócio</label>';
     const q=x=>li.querySelector(x);q('.bem').value=it.emoji||'';q('.bname').value=it.name;q('.bbud').value=(kind==='src'?it.expected:it.budget)||'';
     q('.bem').addEventListener('change',e=>{it.emoji=e.target.value.trim()||(kind==='src'?'💰':'✨');save();renderHome()});
     q('.bname').addEventListener('change',e=>{const v=e.target.value.trim();if(v)it.name=v;else e.target.value=it.name;save();renderHome()});
     q('.bbud').addEventListener('change',e=>{const v=Math.max(0,money(e.target.value)||0);if(kind==='src')it.expected=v;else it.budget=v;save();renderHome()});
     if(kind==='cat'){q('.cEss').checked=!!it.ess;q('.cBiz').checked=!!it.biz;q('.cEss').addEventListener('change',e=>{it.ess=e.target.checked;save();renderHome()});q('.cBiz').addEventListener('change',e=>{it.biz=e.target.checked;save();renderHome()})}
-    q('.ckx').setAttribute('aria-label','Apagar '+it.name);q('.ckx').addEventListener('click',()=>{if(kind==='src')F.srcs=F.srcs.filter(x=>x!==it);else F.cats=F.cats.filter(x=>x!==it);save();renderHome();again()});
     ul.appendChild(li)});
-  const add=el('button','addLine');add.type='button';add.textContent=kind==='src'?'+ Nova fonte':'+ Nova categoria';
-  add.addEventListener('click',()=>{if(kind==='src')F.srcs.push({id:uid(),emoji:'💰',name:'Nova fonte',expected:0});else F.cats.push({id:uid(),emoji:'✨',name:'Nova categoria',budget:0,ess:false});save();renderHome();again();
+  const add=el('button','addLine');add.type='button';add.textContent=kind==='src'?'+ Nova fonte':'+ Nova despesa';
+  add.addEventListener('click',()=>{if(kind==='src')F.srcs.push({id:uid(),emoji:'💰',name:'Nova fonte',expected:0});else F.cats.push({id:uid(),emoji:'✨',name:'Nova despesa',budget:0,ess:false});save();renderHome();again();
     const l=[...$('blkBody').querySelectorAll('#namesEd .bname')].pop();if(l){l.focus();l.select()}});
-  wrap.appendChild(add);return wrap;
+  wrap.appendChild(add);
+  const hid=arr.filter(x=>x.hidden);
+  if(hid.length){const h3=el('span','flabel');h3.style.cssText='display:block;margin-top:16px';h3.textContent='Retiradas da lista';wrap.appendChild(h3);
+    const hu=el('ul','budgets');hid.forEach(it=>{const li=el('li','bud');li.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+      li.innerHTML='<span class="em"></span><b style="flex:1;min-width:100px"></b><button type="button" class="ghostBtn sm back">Mostrar</button><button type="button" class="ghostBtn sm del">Apagar</button>';
+      li.querySelector('.em').textContent=it.emoji||'✨';li.querySelector('b').textContent=it.name;
+      li.querySelector('.back').addEventListener('click',()=>{it.hidden=false;save();renderHome();again()});
+      li.querySelector('.del').addEventListener('click',()=>{if(!confirm('Apagar "'+it.name+'" de vez? Os registos antigos ficam sem nome.'))return;if(kind==='src')F.srcs=F.srcs.filter(x=>x!==it);else F.cats=F.cats.filter(x=>x!==it);save();renderHome();again()});
+      hu.appendChild(li)});wrap.appendChild(hu)}
+  return wrap;
 }
+let askRepor=false;
+function rerenderBlock(){const sc=$('blkBody').scrollTop;renderBlock();$('blkBody').scrollTop=sc}
 function renderBlock(){
   const d=OPTS[BLK],h=HU(),box=$('blkBody');$('blkTitle').textContent='Editar: '+((BLK==='inc'||BLK==='bills'||BLK==='spend')&&h.names[BLK]||d.title);
   box.innerHTML='';const intro=el('p','note');intro.textContent='Escolhe o que queres ver neste bloco. Isto só muda neste telemóvel, por isso cada pessoa pode ter o seu.';box.appendChild(intro);
@@ -2682,8 +2726,11 @@ function renderBlock(){
     box.appendChild(ul);const hp=el('p','note');hp.textContent='Se deixares só "Mês", os botões Hoje e Semana desaparecem.';box.appendChild(hp)}
   head('O que mostrar');const ul=el('ul','optList');d.list.forEach(it=>ul.appendChild(row(it.l,OPT(BLK,it.k),cb=>setOpt(it.k,cb.checked))));box.appendChild(ul);
   if(d.names)box.appendChild(buildNames(d.names==='src'?'src':'cat'));
-  const rb=el('button','ghostBtn');rb.type='button';rb.style.marginTop='16px';rb.textContent='Repor este bloco';
-  rb.addEventListener('click',()=>{delete h.o[BLK];save();applyOpts();if(BLK==='inc')renderIncome();if(BLK==='sim')renderSim();renderBlock();toast('Bloco reposto como estava.')});box.appendChild(rb);
+  const rb=el('button','ghostBtn');rb.type='button';rb.style.marginTop='16px';rb.textContent=askRepor?'Tens a certeza? Toca outra vez para repor':'Repor';
+  rb.addEventListener('click',()=>{if(!askRepor){askRepor=true;rerenderBlock();return}
+    askRepor=false;delete h.o[BLK];if(d.names)resetList(d.names==='src'?'src':'cat');save();applyOpts();if(BLK==='inc')renderIncome();if(BLK==='sim')renderSim();renderHome();renderBlock();toast('Tudo reposto como estava.')});
+  box.appendChild(rb);
+  if(d.names){const hp=el('p','note');hp.textContent='Repor devolve as opções, os nomes, a ordem e os itens retirados ao que era no início. Os orçamentos voltam a zero e o que criaste fica no fim da lista.';box.appendChild(hp)}
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-edit]');if(b)openBlock(b.dataset.edit)});
 $('blkClose').addEventListener('click',closeBlock);$('blkBack').addEventListener('click',closeBlock);
@@ -2693,6 +2740,7 @@ applyOpts();
 // ======================================================================
 // ---------- Reordenar: manter o dedo num bloco e arrastar ----------
 // ======================================================================
+const TE={kind:null,dragging:false};
 const RE={mode:false,view:null,cfg:null,press:null,drag:null,noClick:0};
 function reCfg(v){
   if(v==='inicio')return {stack:document.querySelector('#v-inicio .stack'),key:s=>s.dataset.sec,save:ids=>{HU().order=ids},head:'.row, .aqInfo'};
@@ -2707,6 +2755,11 @@ function applyLearnOrder(){
 const visSecs=stack=>[...stack.children].filter(c=>c.tagName==='SECTION'&&c.offsetParent!==null);
 function cancelPress(){if(RE.press){clearTimeout(RE.press.t);RE.press=null}}
 document.addEventListener('pointerdown',e=>{
+  if(TE.kind){const g=tileGrid(TE.kind),tile=e.target.closest&&e.target.closest('.cat');
+    if(g&&tile&&g.contains(tile)&&!tile.classList.contains('editTile')&&!e.target.closest('.rm')&&!TE.dragging&&(e.button||0)===0){e.preventDefault();beginTileDrag(tile,e.pointerId,e.clientX,e.clientY)}return}
+  {const tl=!RE.mode&&e.target.closest&&e.target.closest('#catGrid .cat:not(.editTile), #srcGrid .cat:not(.editTile)');
+   if(tl&&(e.button||0)===0){const kind=tl.parentElement.id==='catGrid'?'cat':'src',id=e.pointerId,x0=e.clientX,y0=e.clientY;
+     RE.press={id,x0,y0,t:setTimeout(()=>{RE.press=null;enterTileEdit(kind,tl,id,x0,y0)},800)};return}}
   if(RE.mode){if(RE.drag||(e.button||0)>0)return;const sec=visSecs(RE.cfg.stack).find(c=>c.contains(e.target));if(sec){e.preventDefault();beginDrag(sec,e.pointerId,e.clientY)}return}
   if((e.button||0)>0)return;const v=state.view,cfg=reCfg(v);if(!cfg||!cfg.stack)return;
   const sec=[...cfg.stack.children].find(c=>c.tagName==='SECTION'&&c.contains(e.target));if(!sec)return;
@@ -2716,11 +2769,11 @@ document.addEventListener('pointerdown',e=>{
 });
 document.addEventListener('pointermove',e=>{const p=RE.press;if(p&&e.pointerId===p.id&&Math.hypot(e.clientX-p.x0,e.clientY-p.y0)>10)cancelPress()});
 ['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,e=>{if(RE.press&&e.pointerId===RE.press.id)cancelPress()}));
-document.addEventListener('touchmove',e=>{if(RE.mode&&e.cancelable)e.preventDefault()},{passive:false});
-document.addEventListener('contextmenu',e=>{if(RE.press||RE.mode)e.preventDefault()});
+document.addEventListener('touchmove',e=>{if((RE.mode||TE.dragging)&&e.cancelable)e.preventDefault()},{passive:false});
+document.addEventListener('contextmenu',e=>{if(RE.press||RE.mode||TE.kind)e.preventDefault()});
 window.addEventListener('click',e=>{if(Date.now()<RE.noClick){e.stopPropagation();e.preventDefault()}},true);
 function enterReorder(v,sec,id,y){
-  RE.mode=true;RE.view=v;RE.cfg=reCfg(v);document.body.classList.add('reordering');$('reorderBar').hidden=false;
+  RE.mode=true;RE.view=v;RE.cfg=reCfg(v);document.body.classList.add('reordering');$('reorderBar').querySelector('span').textContent='↕ Arrasta os blocos para a ordem que preferires';$('reorderBar').hidden=false;
   if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
   window.scrollTo(0,0);if(navigator.vibrate)try{navigator.vibrate(25)}catch(_){}
   beginDrag(sec,id,y);
@@ -2748,9 +2801,40 @@ function beginDrag(D,id,y){
   pos(y);
 }
 function exitReorder(){if(!RE.mode)return;RE.mode=false;document.body.classList.remove('reordering');$('reorderBar').hidden=true;
-  RE.noClick=Date.now()+400;if(RE.view==='inicio')applyHome();else applyLearnOrder();RE.cfg=null;window.scrollTo(0,0);toast('Ordem guardada.')}
+  if(RE.view==='inicio')applyHome();else applyLearnOrder();RE.cfg=null;window.scrollTo(0,0);toast('Ordem guardada.')}
 $('reorderDone').addEventListener('click',exitReorder);
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&RE.mode)exitReorder()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&RE.mode)exitReorder();if(e.key==='Escape'&&TE.kind)exitTileEdit()});
+const tileGrid=kind=>$(kind==='cat'?'catGrid':'srcGrid');
+const tilesOf=g=>[...g.children].filter(c=>c.classList.contains('cat')&&!c.classList.contains('editTile'));
+function enterTileEdit(kind,tile,id,x,y){
+  TE.kind=kind;tileGrid(kind).classList.add('editing');$('reorderBar').querySelector('span').textContent='↕ Arrasta para ordenar. Toca no × para retirar.';$('reorderBar').hidden=false;
+  if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();if(navigator.vibrate)try{navigator.vibrate(25)}catch(_){}
+  beginTileDrag(tile,id,x,y,true)}
+function exitTileEdit(){if(!TE.kind)return;TE.kind=null;['catGrid','srcGrid'].forEach(i=>$(i).classList.remove('editing'));$('reorderBar').hidden=true;save();toast('Guardado.')}
+$('reorderDone').addEventListener('click',exitTileEdit);
+function hideItem(kind,it){it.hidden=true;save();renderHome();toast('Retirado: '+it.name+'. Para voltar a mostrar, vai a ✎ Editar.')}
+function beginTileDrag(D,id,cx0,cy0,lp){
+  let moved=false;
+  const g=D.parentElement,kind=g.id==='catGrid'?'cat':'src';TE.dragging=true;D.classList.add('lifted');
+  const r=D.getBoundingClientRect(),gx=cx0-r.left,gy=cy0-r.top;
+  const flipAll=fn=>{const sibs=tilesOf(g).filter(t=>t!==D),bef=new Map(sibs.map(t=>[t,[t.offsetLeft,t.offsetTop]]));fn();
+    sibs.forEach(t=>{const [bx,by]=bef.get(t),dx=bx-t.offsetLeft,dy=by-t.offsetTop;if(!(dx||dy)||reduced)return;
+      t.style.transition='none';t.style.transform='translate('+dx+'px,'+dy+'px)';t.getBoundingClientRect();t.style.transition='transform .18s ease';t.style.transform='';setTimeout(()=>{t.style.transition=''},230)})};
+  const pos=(cx,cy)=>{const op=D.offsetParent||document.body,orc=op.getBoundingClientRect();
+    const L=cx-gx-orc.left,T=cy-gy-orc.top,mx=L+D.offsetWidth/2,my=T+D.offsetHeight/2;
+    const all=tilesOf(g),iD=all.indexOf(D);
+    const hit=all.find(t=>t!==D&&mx>=t.offsetLeft&&mx<=t.offsetLeft+t.offsetWidth&&my>=t.offsetTop&&my<=t.offsetTop+t.offsetHeight);
+    if(hit){const iT=all.indexOf(hit);
+      if(iT<iD){const mv=all.slice(iT,iD);flipAll(()=>{let ref=D;mv.forEach(t=>{ref.after(t);ref=t})})}
+      else{const mv=all.slice(iD+1,iT+1);flipAll(()=>{mv.forEach(t=>D.before(t))})}}
+    D.style.transform='translate('+(L-D.offsetLeft)+'px,'+(T-D.offsetTop)+'px)'};
+  const move=ev=>{if(ev.pointerId!==id)return;if(Math.hypot(ev.clientX-cx0,ev.clientY-cy0)>6)moved=true;pos(ev.clientX,ev.clientY)};
+  const up=ev=>{if(ev.pointerId!==id)return;document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
+    D.style.transition='transform .16s ease';D.style.transform='';setTimeout(()=>{D.style.transition='';D.classList.remove('lifted')},170);TE.dragging=false;if(moved||lp)RE.noClick=Date.now()+350;
+    const ids=tilesOf(g).map(t=>t.dataset.id),arr=kind==='cat'?F.cats:F.srcs;const ordered=ids.map(i=>arr.find(x=>x.id===i)).filter(Boolean),rest=arr.filter(x=>!ids.includes(x.id));
+    if(kind==='cat')F.cats=[...ordered,...rest];else F.srcs=[...ordered,...rest];save()};
+  document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
+  pos(cx0,cy0)}
 {const h=HU();if(!h.hintRe&&state.onboarded!==false&&state.view==='inicio'){h.hintRe=true;save();setTimeout(()=>{if(!RE.mode)toast('Dica: mantém o dedo uns segundos no título de um bloco para o arrastar e mudar a ordem.')},2600)}}
 applyLearnOrder();
 showView(state.view);
@@ -2837,6 +2921,7 @@ function applyRemote(m){
   const mf=m.fin||{};Object.keys(fin).forEach(k=>{if(!(k in mf)&&!FUIKEYS.includes(k))delete fin[k]});Object.keys(mf).forEach(k=>{fin[k]=mf[k]});
   state.fin=fin;Object.assign(state,keepUI);Object.assign(fin,keepF);
   ['srcs','recv','bills','cats','spends','lists'].forEach(k=>{if(!Array.isArray(fin[k]))fin[k]=[]});
+  dedupeBiz();
   if(!Array.isArray(state.axos)||!state.axos.length)state.axos=DEFAULTS().axos;
   if(!Array.isArray(state.savings)||!state.savings.length)state.savings=DEFAULTS().savings;
   state.sel=Math.max(0,Math.min(state.sel||0,state.axos.length-1));state.cur=Math.max(0,Math.min(state.cur||0,state.savings.length-1));
