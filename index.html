@@ -594,6 +594,25 @@ body.noscroll .fab{display:none}
 .optT .sw{flex:none}
 .optT span:last-child{font-weight:700;font-size:.92rem}
 #blkBody .budgets{margin-top:6px}
+
+.reorderBar{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;background:var(--accent);color:var(--accent-ink);font:800 .92rem Nunito,sans-serif}
+.reorderBar[hidden]{display:none}
+.reorderBar button{font:800 .9rem Nunito,sans-serif;padding:7px 16px;border-radius:999px;border:none;background:var(--surface);color:var(--accent);cursor:pointer}
+.stack>section .row,.stack>section .aqInfo,.stack>section>h2{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.reordering,body.reordering *{-webkit-user-select:none;user-select:none}
+body.reordering .app{padding-top:78px}
+body.reordering .homeTop,body.reordering .fab,body.reordering .syncBtn,body.reordering .stack>.mascot{display:none!important}
+body.reordering .stack>section:not(.homeAq)>*:not(:first-child){display:none!important}
+body.reordering .stack>section.homeAq>#homeAqSlot{display:none!important}
+body.reordering .stack>section .mini-edit{display:none!important}
+body.reordering .aqInfo .mini,body.reordering .aqInfo small,body.reordering .aqInfo .brow span{display:none}
+body.reordering .stack>section>.row{margin:0;min-height:28px;align-items:center}
+body.reordering .stack>section>h2{margin:0}
+body.reordering .homeAq{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:16px 18px}
+body.reordering .stack>section{cursor:grab;touch-action:none;position:relative}
+body.reordering .stack>section *{pointer-events:none}
+body.reordering .stack>section::after{content:"≡";position:absolute;right:20px;top:50%;margin-top:-14px;font:800 1.7rem/1 Nunito,sans-serif;color:var(--muted)}
+body.reordering .stack>section.lifted{z-index:30;cursor:grabbing;border-color:var(--accent);box-shadow:0 14px 32px rgba(75,42,99,.35);will-change:transform}
 </style>
 </head>
 <body>
@@ -906,7 +925,7 @@ body.noscroll .fab{display:none}
   <div class="sheetBox" role="dialog" aria-modal="true" aria-labelledby="homeSheetTitle">
     <div class="sheetHead"><h2 id="homeSheetTitle">Personalizar o Início</h2><button type="button" class="sheetClose" id="homeClose" aria-label="Fechar">×</button></div>
     <div class="sheetBody">
-      <p class="note">Escolhe o que queres ver, a ordem e os nomes. Isto só muda neste telemóvel, por isso cada pessoa pode ter o seu Início.</p>
+      <p class="note">Escolhe o que queres ver, a ordem e os nomes. Isto só muda neste telemóvel, por isso cada pessoa pode ter o seu Início. Dica: para mudar a ordem mais depressa, mantém o dedo uns segundos no título de um bloco e arrasta.</p>
       <span class="flabel">Blocos do Início</span>
       <ul class="homeList" id="homeList"></ul>
       <span class="flabel" style="margin-top:14px">Menu de baixo</span>
@@ -922,6 +941,7 @@ body.noscroll .fab{display:none}
     <div class="sheetBody" id="blkBody"></div>
   </div>
 </div>
+<div class="reorderBar" id="reorderBar" hidden><span>↕ Arrasta os blocos para a ordem que preferires</span><button type="button" id="reorderDone">Pronto</button></div>
 <nav class="tabbar" id="tabbar" aria-label="Menu principal">
   <button type="button" data-view="inicio"><span aria-hidden="true">🏠</span>Início</button>
   <button type="button" data-view="dia"><span aria-hidden="true">🛒</span>Dia-a-dia</button>
@@ -2527,7 +2547,7 @@ function applyHome(){
       if(b){b.setAttribute('aria-expanded',String(!c));b.querySelector('.secTitle').textContent=h.names[id]||def;sec.setAttribute('aria-label',h.names[id]||def)}
       const sm=document.getElementById('secSum_'+id);if(sm)sm.hidden=!c}});
   document.querySelectorAll('#tabbar button').forEach(b=>{const v=b.dataset.view;b.hidden=v!=='inicio'&&h.tabs[v]===false});
-  updateSecSums();
+  updateSecSums();applyLearnOrder();
 }
 function renderHomeSheet(){
   const h=HU(),ul=$('homeList');ul.innerHTML='';
@@ -2669,6 +2689,70 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-edit]');if
 $('blkClose').addEventListener('click',closeBlock);$('blkBack').addEventListener('click',closeBlock);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('blkSheet').hidden)closeBlock()});
 applyOpts();
+
+// ======================================================================
+// ---------- Reordenar: manter o dedo num bloco e arrastar ----------
+// ======================================================================
+const RE={mode:false,view:null,cfg:null,press:null,drag:null,noClick:0};
+function reCfg(v){
+  if(v==='inicio')return {stack:document.querySelector('#v-inicio .stack'),key:s=>s.dataset.sec,save:ids=>{HU().order=ids},head:'.row, .aqInfo'};
+  if(v==='aprender')return {stack:document.querySelector('#v-aprender .stack'),key:s=>s.getAttribute('aria-label')||'',save:ids=>{HU().orderL=ids},head:'h2, .row'};
+  return null}
+function applyLearnOrder(){
+  const stack=document.querySelector('#v-aprender .stack');if(!stack)return;const ord=HU().orderL;if(!Array.isArray(ord)||!ord.length)return;
+  const secs=[...stack.children].filter(c=>c.tagName==='SECTION');
+  const idx=(c,i)=>{const k=ord.indexOf(c.getAttribute('aria-label')||'');return k>=0?k:100+i};
+  secs.map((c,i)=>[c,idx(c,i)]).sort((a,b)=>a[1]-b[1]).forEach(([c])=>stack.appendChild(c));
+}
+const visSecs=stack=>[...stack.children].filter(c=>c.tagName==='SECTION'&&c.offsetParent!==null);
+function cancelPress(){if(RE.press){clearTimeout(RE.press.t);RE.press=null}}
+document.addEventListener('pointerdown',e=>{
+  if(RE.mode){if(RE.drag||(e.button||0)>0)return;const sec=visSecs(RE.cfg.stack).find(c=>c.contains(e.target));if(sec){e.preventDefault();beginDrag(sec,e.pointerId,e.clientY)}return}
+  if((e.button||0)>0)return;const v=state.view,cfg=reCfg(v);if(!cfg||!cfg.stack)return;
+  const sec=[...cfg.stack.children].find(c=>c.tagName==='SECTION'&&c.contains(e.target));if(!sec)return;
+  const hd=[...sec.children].find(c=>c.matches(cfg.head)&&c.contains(e.target));if(!hd)return;
+  const id=e.pointerId,x0=e.clientX,y0=e.clientY;
+  RE.press={id,x0,y0,t:setTimeout(()=>{RE.press=null;enterReorder(v,sec,id,y0)},800)};
+});
+document.addEventListener('pointermove',e=>{const p=RE.press;if(p&&e.pointerId===p.id&&Math.hypot(e.clientX-p.x0,e.clientY-p.y0)>10)cancelPress()});
+['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,e=>{if(RE.press&&e.pointerId===RE.press.id)cancelPress()}));
+document.addEventListener('touchmove',e=>{if(RE.mode&&e.cancelable)e.preventDefault()},{passive:false});
+document.addEventListener('contextmenu',e=>{if(RE.press||RE.mode)e.preventDefault()});
+window.addEventListener('click',e=>{if(Date.now()<RE.noClick){e.stopPropagation();e.preventDefault()}},true);
+function enterReorder(v,sec,id,y){
+  RE.mode=true;RE.view=v;RE.cfg=reCfg(v);document.body.classList.add('reordering');$('reorderBar').hidden=false;
+  if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+  window.scrollTo(0,0);if(navigator.vibrate)try{navigator.vibrate(25)}catch(_){}
+  beginDrag(sec,id,y);
+}
+function beginDrag(D,id,y){
+  const stack=RE.cfg.stack;
+  {const r=D.getBoundingClientRect();const delta=r.top+r.height/2-y;if(Math.abs(delta)>2)window.scrollBy(0,delta)}
+  const r0=D.getBoundingClientRect();const grab=y-(r0.top+r0.height/2);
+  D.classList.add('lifted');RE.drag={D,id};
+  const flip=(sib,fn)=>{const b=sib.offsetTop;fn();const a=sib.offsetTop;if(a!==b&&!reduced){sib.style.transition='none';sib.style.transform='translateY('+(b-a)+'px)';sib.getBoundingClientRect();sib.style.transition='transform .18s ease';sib.style.transform='';setTimeout(()=>{sib.style.transition=''},230)}else sib.style.transform=''};
+  const pos=cy=>{
+    const op=D.offsetParent||document.body,py=cy-grab-op.getBoundingClientRect().top;
+    for(let g=0;g<8;g++){const all=[...stack.children].filter(c=>c.tagName==='SECTION'&&(c===D||c.offsetParent!==null));const i=all.indexOf(D),prev=all[i-1],next=all[i+1];
+      if(prev&&py<prev.offsetTop+prev.offsetHeight/2){flip(prev,()=>D.after(prev));continue}
+      if(next&&py>next.offsetTop+next.offsetHeight/2){flip(next,()=>D.before(next));continue}
+      break}
+    D.style.transform='translateY('+(py-(D.offsetTop+D.offsetHeight/2))+'px)';
+  };
+  const move=ev=>{if(ev.pointerId===id)pos(ev.clientY)};
+  const up=ev=>{if(ev.pointerId!==id)return;document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
+    D.style.transition='transform .16s ease';D.style.transform='';setTimeout(()=>{D.style.transition='';D.classList.remove('lifted')},170);RE.drag=null;RE.noClick=Date.now()+350;
+    const ids=[...stack.children].filter(c=>c.tagName==='SECTION').map(RE.cfg.key);RE.cfg.save(ids);save();
+    if(RE.view==='inicio'&&!$('homeSheet').hidden)renderHomeSheet()};
+  document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
+  pos(y);
+}
+function exitReorder(){if(!RE.mode)return;RE.mode=false;document.body.classList.remove('reordering');$('reorderBar').hidden=true;
+  RE.noClick=Date.now()+400;if(RE.view==='inicio')applyHome();else applyLearnOrder();RE.cfg=null;window.scrollTo(0,0);toast('Ordem guardada.')}
+$('reorderDone').addEventListener('click',exitReorder);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&RE.mode)exitReorder()});
+{const h=HU();if(!h.hintRe&&state.onboarded!==false&&state.view==='inicio'){h.hintRe=true;save();setTimeout(()=>{if(!RE.mode)toast('Dica: mantém o dedo uns segundos no título de um bloco para o arrastar e mudar a ordem.')},2600)}}
+applyLearnOrder();
 showView(state.view);
 
 // ---------- Boas-vindas (primeira vez que a app abre) ----------
