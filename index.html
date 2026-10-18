@@ -624,6 +624,14 @@ body.reordering .stack>section.lifted{z-index:30;cursor:grabbing;border-color:va
 .catGrid .cat.lifted{z-index:20;cursor:grabbing;border-color:var(--accent);box-shadow:0 12px 26px rgba(75,42,99,.35);animation:none}
 @media (prefers-reduced-motion:reduce){.catGrid.editing .cat:not(.lifted){animation:none}}
 .ghostBtn.sm{padding:6px 12px;font-size:.8rem}
+
+body[data-biz="0"] .bizTag,body[data-biz="0"] #bizLine,body[data-biz="0"] .bizc,body[data-biz="0"] #billAddBiz{display:none!important}
+.addPair{display:flex;gap:8px}
+.addPair .addLine{flex:1;font-size:.82rem;padding:10px 6px}
+.grpHead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:6px;list-style:none;font-weight:800;font-size:.88rem;color:var(--muted)}
+.grpHead span{font-weight:700;font-size:.78rem}
+.grpHead.biz{color:#b45309}
+.wBizRow{margin:12px 0 0;font-size:.9rem}
 </style>
 </head>
 <body>
@@ -665,7 +673,7 @@ body.reordering .stack>section.lifted{z-index:30;cursor:grabbing;border-color:va
         <div class="split"><div><small>Liquidado</small><b id="billPaid"></b></div><div><small>Falta liquidar</small><b id="billLeft" class="accent"></b></div></div>
         <div class="bar" aria-hidden="true"><span id="billBar"></span></div>
         <ul class="flist" id="billList"></ul>
-        <button type="button" class="addLine" id="billAdd">+ Adicionar despesa</button>
+        <div class="addPair"><button type="button" class="addLine" id="billAdd">+ Adicionar despesa</button><button type="button" class="addLine" id="billAddBiz">+ Despesa do negócio</button></div>
       </section>
       <section class="panel" data-sec="spend" aria-label="Gastos do dia a dia">
         <div class="row"><h2>Gastos do dia a dia</h2><button type="button" class="mini-edit" id="editCats" data-edit="spend">✎ Editar</button></div>
@@ -900,6 +908,10 @@ body.reordering .stack>section.lifted{z-index:30;cursor:grabbing;border-color:va
         <p class="note">Guarda um ficheiro com todos os dados, ou recupera uma cópia antiga.</p>
         <div class="setBtns"><button type="button" class="ghostBtn" id="expBtn">Descarregar cópia</button><button type="button" class="ghostBtn" id="impBtn">Recuperar cópia</button><input type="file" id="impFile" accept="application/json,.json" hidden></div>
       </section>
+      <section class="setBlock"><h3 class="h3">🏪 Negócio</h3>
+        <p class="note">Se também controlas despesas de um negócio, liga esta opção para ter a categoria Negócio e um grupo à parte nas despesas fixas. Desligada, fica tudo escondido.</p>
+        <label class="toggle"><input type="checkbox" id="setBiz"><span class="sw"></span><span>Mostrar a opção Negócio</span></label>
+      </section>
       <section class="setBlock"><h3 class="h3">🧹 Dados de exemplo</h3>
         <p class="note">Apaga rendimentos, gastos, contas, listas e poupanças de exemplo para começares com os teus números. Os axolotls ficam.</p>
         <div class="setBtns"><button type="button" class="ghostBtn warnb" id="zeroBtn">Começar do zero</button></div>
@@ -972,6 +984,7 @@ body.reordering .stack>section.lifted{z-index:30;cursor:grabbing;border-color:va
     <div class="wMore" id="wMore"><button type="button" class="mini-edit" id="wAdd">+ Mais uma pessoa</button><button type="button" class="mini-edit" id="wRem">− Menos uma</button></div>
     <span class="flabel" style="margin-top:12px">O primeiro sonho (opcional)</span>
     <div class="pair"><input type="text" id="wDream" maxlength="60" placeholder="Fundo de emergência" aria-label="Nome do primeiro sonho"><input type="number" id="wGoal" min="1" step="any" inputmode="decimal" placeholder="1000 €" aria-label="Valor do objetivo"></div>
+    <label class="toggle wBizRow"><input type="checkbox" id="wBiz"><span class="sw"></span><span>Também vou controlar despesas de um negócio</span></label>
     <button type="button" class="cta" id="wGo">Começar 🦎</button>
     <p class="note" style="margin:10px 0 0;text-align:center">Tudo fica guardado neste telemóvel. Podes ligar ao Google Drive depois, na nuvem ☁️.</p>
     <button type="button" class="ghostBtn wJoin" id="wJoin">Já usamos a Savealotl noutro telemóvel: ligar ao Google Drive</button>
@@ -1826,7 +1839,13 @@ const paidBillsM=()=>{const k=MK();return F.bills.filter(b=>b.paid[k]).reduce((a
 const bizSpentM=()=>spendsIn(MK()).filter(x=>catOf(x.c).biz).reduce((a,x)=>a+x.v,0)+(()=>{const k=MK();return F.bills.filter(b=>b.biz&&b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0)})();
 const bizBillsM=()=>F.bills.filter(b=>b.biz).reduce((a,b)=>a+(+b.amount||0),0);
 const catOf=id=>F.cats.find(c=>c.id===id)||{emoji:'✨',name:'Sem categoria',budget:0,ess:false};
-const visCats=()=>F.cats.filter(c=>!c.hidden),visSrcs=()=>F.srcs.filter(x=>!x.hidden);
+const visCats=()=>F.cats.filter(catShown),visSrcs=()=>F.srcs.filter(x=>!x.hidden);
+// A opção Negócio é opcional: desligada, a app esconde tudo o que é de negócio. Quem já a usava fica com ela ligada.
+function bizUsed(){return F.bills.some(b=>b.biz)||F.spends.some(x=>catOf(x.c).biz)}
+function bizOn(){const h=HU();return typeof h.biz==='boolean'?h.biz:bizUsed()}
+function catShown(c){return !c.hidden&&(bizOn()||!c.biz)}
+function applyBiz(){document.body.dataset.biz=bizOn()?'1':'0'}
+function setBiz(v){HU().biz=!!v;save();applyBiz();renderHome()}
 // Os dois telemóveis criavam cada um a sua categoria "Negócio" e juntavam-se duas. Fica sempre a mesma (a "c10", ou a de id mais baixo), igual nos dois.
 function dedupeBiz(){const list=F.cats.filter(c=>/^\s*neg[óo]cio\s*$/i.test(c.name||''));if(!list.length)return false;
   const keep=list.find(c=>c.id==='c10')||list.slice().sort((a,b)=>String(a.id)<String(b.id)?-1:1)[0];const drop=list.filter(c=>c!==keep).map(c=>c.id);
@@ -1884,6 +1903,7 @@ document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g
 
 // ---------- Início ----------
 function renderHome(){
+  applyBiz();
   const d=new Date(),k=MK(),day=d.getDate(),left_days=dim(d)-day+1;
   $('dateLine').textContent=monthName(d).replace(/^./,c=>c.toUpperCase());
   const M=incomeNow(),B=billsM(),V=spentM(),S=savedThisMonth(),P=planM(),keep=Math.max(Math.min(P,Math.max(0,M-B-V)),S);
@@ -1983,7 +2003,7 @@ function renderHist(kind){
     const li=el('li','hrow');
     li.innerHTML=`<input class="hnote" type="text" maxlength="40"><select class="hs"></select><select class="hw"></select><input class="hd" type="date"><label class="hvl"><input class="hv" type="number" min="0.01" step="any" inputmode="decimal"> €</label><div class="hbtns"><button type="button" class="hdel">Apagar</button><button type="button" class="hok">Pronto</button></div>`;
     const q=x=>li.querySelector(x);
-    const opts=(isInc?F.srcs:F.cats).filter(o=>!o.hidden||o.id===(isInc?e.src:e.c));q('.hs').innerHTML=opts.map(o=>`<option value="${o.id}"></option>`).join('');[...q('.hs').options].forEach((o,n)=>o.textContent=(opts[n].emoji||'')+' '+opts[n].name);
+    const opts=(isInc?F.srcs:F.cats).filter(o=>(isInc?!o.hidden:catShown(o))||o.id===(isInc?e.src:e.c));q('.hs').innerHTML=opts.map(o=>`<option value="${o.id}"></option>`).join('');[...q('.hs').options].forEach((o,n)=>o.textContent=(opts[n].emoji||'')+' '+opts[n].name);
     const cid=isInc?e.src:e.c;if(!opts.some(o=>o.id===cid)){const o=document.createElement('option');o.value=cid||'';o.textContent=isInc?'💰 Outro':'✨ Sem categoria';q('.hs').appendChild(o)}
     q('.hs').value=cid||'';q('.hs').setAttribute('aria-label',isInc?'Fonte':'Categoria');
     whoOptions(q('.hw'),true);q('.hw').value=e.w||'';q('.hw').setAttribute('aria-label','Quem');
@@ -2003,11 +2023,13 @@ function renderHist(kind){
 }
 // Despesas fixas
 function renderBills(){
-  const k=MK(),day=new Date().getDate();
+  const k=MK(),day=new Date().getDate(),on=bizOn();
   const paid=F.bills.filter(b=>b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0),tot=billsM();
   $('billPaid').textContent=fmt(paid);$('billLeft').textContent=fmt(tot-paid);$('billBar').style.width=(tot?paid/tot*100:0)+'%';
+  $('billAdd').textContent=on?'+ Despesa pessoal':'+ Adicionar despesa';
   const ul=$('billList');ul.innerHTML='';
-  [...F.bills].sort((a,b)=>(!!a.paid[k])-(!!b.paid[k])||(a.due||99)-(b.due||99)).forEach(b=>{
+  const sorted=[...F.bills].sort((a,b)=>(!!a.paid[k])-(!!b.paid[k])||(a.due||99)-(b.due||99));
+  const addRow=b=>{
     const p=!!b.paid[k],late=!p&&b.due&&b.due<day;const li=el('li','fi'+(p?' done':'')+(late?' late':''));
     li.innerHTML=`<button type="button" class="tick">${p?'✓':''}</button><div class="fmain"><input class="fname" type="text" maxlength="40" placeholder="Ex.: Renda">
       <div class="frow"><input class="famt" type="number" min="0" step="any" inputmode="decimal"><span class="eu">€</span>
@@ -2015,7 +2037,7 @@ function renderBills(){
     const q=s=>li.querySelector(s);
     q('.tick').setAttribute('aria-label',(p?'Desmarcar':'Marcar')+' como pago');q('.tick').setAttribute('aria-pressed',String(p));
     q('.fname').value=b.name;q('.famt').value=b.amount;q('.fdn').value=b.due||'';q('.fdn').setAttribute('aria-label','Dia do pagamento');
-    q('.bizTag').setAttribute('aria-pressed',String(!!b.biz));q('.bizTag').addEventListener('click',()=>{b.biz=!b.biz;save();renderHome()});
+    q('.bizTag').setAttribute('aria-pressed',String(!!b.biz));q('.bizTag').setAttribute('aria-label',b.biz?'Passar para despesas pessoais':'Passar para despesas do negócio');q('.bizTag').addEventListener('click',()=>{b.biz=!b.biz;save();renderHome()});
     q('.badge').textContent=p?'Pago':late?'Já passou do dia '+b.due:b.due?(b.due===day?'Vence hoje':'Vence dia '+b.due):'';
     q('.tick').addEventListener('click',()=>{if(p)delete b.paid[k];else b.paid[k]=true;save();renderHome();if(!p)toast('✓ '+(b.name||'Despesa')+' liquidada. Faltam '+fmt(F.bills.filter(x=>!x.paid[k]).reduce((a,x)=>a+(+x.amount||0),0))+' este mês.')});
     q('.fname').addEventListener('change',e=>{b.name=e.target.value.trim()||b.name;save()});
@@ -2023,9 +2045,16 @@ function renderBills(){
     q('.fdn').addEventListener('change',e=>{const v=parseInt(e.target.value,10);b.due=v>=1&&v<=31?v:null;save();renderHome()});
     q('.ckx').setAttribute('aria-label','Apagar '+b.name);q('.ckx').addEventListener('click',()=>{F.bills=F.bills.filter(x=>x!==b);save();renderHome()});
     ul.appendChild(li);
-  });
+  };
+  const group=(title,list,cls)=>{const t=list.reduce((a,b)=>a+(+b.amount||0),0),pd=list.filter(b=>b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0);
+    const h=el('li','grpHead'+(cls?' '+cls:''));h.innerHTML='<b></b><span></span>';h.querySelector('b').textContent=title;h.querySelector('span').textContent='Liquidado '+fmt(pd)+' · Falta '+fmt(t-pd);ul.appendChild(h);list.forEach(addRow)};
+  const biz=sorted.filter(b=>b.biz),per=sorted.filter(b=>!b.biz);
+  if(on&&biz.length){if(per.length)group('Pessoais',per);group('🏪 Negócio',biz,'biz')}
+  else sorted.forEach(addRow);
 }
-$('billAdd').addEventListener('click',()=>{F.bills.push({id:uid(),name:'',amount:0,due:null,paid:{}});save();renderHome();const l=[...document.querySelectorAll('#billList .fname')].find(x=>!x.value);if(l)l.focus()});
+function addBill(biz){F.bills.push({id:uid(),name:'',amount:0,due:null,paid:{},biz:!!biz});save();renderHome();const l=[...document.querySelectorAll('#billList .fname')].find(x=>!x.value);if(l)l.focus()}
+$('billAdd').addEventListener('click',()=>addBill(false));
+$('billAddBiz').addEventListener('click',()=>addBill(true));
 // Gastos do dia a dia
 let editCats=false;
 function renderSpend(){
@@ -2344,7 +2373,7 @@ function renderLists(){
       <button type="button" class="cta lok">Concluir lista</button></div>`;
   const q=x=>body.querySelector(x);
   q('.lname').value=L.name;q('.lname').addEventListener('change',e=>{L.name=e.target.value.trim()||L.name;save();renderLists()});
-  const LC=F.cats.filter(c=>!c.hidden||c.id===L.cat);q('.lcat').innerHTML=LC.map(c=>`<option value="${c.id}"></option>`).join('');[...q('.lcat').options].forEach((o,n)=>o.textContent=(LC[n].emoji||'')+' '+LC[n].name);q('.lcat').value=L.cat;
+  const LC=F.cats.filter(c=>catShown(c)||c.id===L.cat);q('.lcat').innerHTML=LC.map(c=>`<option value="${c.id}"></option>`).join('');[...q('.lcat').options].forEach((o,n)=>o.textContent=(LC[n].emoji||'')+' '+LC[n].name);q('.lcat').value=L.cat;
   q('.lcat').addEventListener('change',e=>{L.cat=e.target.value;save()});
   q('.lprog span').textContent=L.items.length?done+' de '+L.items.length+' riscados':'Lista vazia';
   q('.mini span').style.width=(L.items.length?done/L.items.length*100:0)+'%';
@@ -2615,7 +2644,6 @@ const OPTS={
   {k:'t_bills',l:'Quadrado "Despesas fixas"',hide:['.tile[data-k="bills"]']},
   {k:'t_spent',l:'Quadrado "Gastos do mês"',hide:['.tile[data-k="spent"]']},
   {k:'t_save',l:'Quadrado "Poupança"',hide:['.tile[data-k="save"]']},
-  {k:'biz',l:'Linha do negócio',hide:['#bizLine']},
   {k:'simbtn',l:'Botão "Recebi dinheiro: onde guardo?"',hide:['.simBtn']},
   {k:'tip',l:'Dica do dia',hide:['#tipOfDay']}]},
  inc:{title:'Rendimentos',root:'[data-sec="inc"]',periods:true,names:'src',list:[
@@ -2627,7 +2655,6 @@ const OPTS={
  bills:{title:'Despesas fixas',root:'[data-sec="bills"]',list:[
   {k:'sum',l:'Liquidado, falta liquidar e barra',hide:['.split','.bar']},
   {k:'due',l:'Dia de pagamento e avisos',hide:['.fdue','.badge']},
-  {k:'biz',l:'Etiqueta "Negócio"',hide:['.bizTag']},
   {k:'help',l:'Textos de ajuda',hide:['.note']}]},
  spend:{title:'Gastos do dia a dia',root:'[data-sec="spend"]',names:'cat',list:[
   {k:'who',l:'Perguntar quem pagou',hide:['#payer']},
@@ -2686,7 +2713,7 @@ function buildNames(kind){
   const nt=el('p','note');nt.textContent=(kind==='src'?'Toca num nome para o mudar: Salário, Biscates, Pensão, Vendas… Se recebes sempre o mesmo, escreve o valor previsto; se varia, deixa em branco.':'Dá o nome que quiseres a cada despesa e, se quiseres, um orçamento por mês.')+' Para mudar a ordem ou retirar da lista, mantém o dedo num ícone no Início e arrasta; o × retira.';wrap.appendChild(nt);
   const ul=el('ul','budgets');wrap.appendChild(ul);const arr=kind==='src'?F.srcs:F.cats;
   const again=()=>{const sc=$('blkBody').scrollTop;renderBlock();$('blkBody').scrollTop=sc};
-  arr.filter(x=>!x.hidden).forEach(it=>{const li=el('li','bud editing');
+  arr.filter(x=>kind==='cat'?catShown(x):!x.hidden).forEach(it=>{const li=el('li','bud editing');
     li.innerHTML=kind==='src'
       ?'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da fonte"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" placeholder="variável" aria-label="Previsto por mês"> €/mês previstos</label>'
       :'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da despesa"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Orçamento mensal" placeholder="Sem limite"> €/mês</label><label class="bess"><input type="checkbox" class="cEss"> Essencial</label><label class="bess bizc"><input type="checkbox" class="cBiz"> Negócio</label>';
@@ -2719,6 +2746,9 @@ function renderBlock(){
   const row=(label,on,fn)=>{const li=el('li');li.innerHTML='<label class="toggle optT"><input type="checkbox"><span class="sw"></span><span></span></label>';li.querySelector('label span:last-child').textContent=label;
     const cb=li.querySelector('input');cb.checked=on;cb.addEventListener('change',()=>fn(cb));return li};
   const setOpt=(k,on)=>{h.o[BLK]=h.o[BLK]||{};if(on)delete h.o[BLK][k];else h.o[BLK][k]=false;save();applyOpts();if(BLK==='inc')renderIncome();if(BLK==='sim')renderSim()};
+  if(['bills','spend','sum'].includes(BLK)){head('Negócio');const bu=el('ul','optList');
+    bu.appendChild(row('Tenho um negócio: mostrar a opção Negócio',bizOn(),cb=>{setBiz(cb.checked);rerenderBlock()}));box.appendChild(bu);
+    const bn=el('p','note');bn.textContent='Desligada, a app esconde tudo o que é de negócio (a categoria, a etiqueta e o grupo à parte). Ligada, as despesas do negócio ficam separadas das pessoais.';box.appendChild(bn)}
   if(d.periods){head('Totais por…');const ul=el('ul','optList');
     [['dia','Hoje'],['semana','Semana'],['mes','Mês']].forEach(([p,n])=>ul.appendChild(row(n,OPT('inc','p_'+p),cb=>{
       const on=['dia','semana','mes'].filter(x=>x!==p&&OPT('inc','p_'+x)).length;
@@ -2861,7 +2891,7 @@ showView(state.view);
       state.axos.push({id,name:(names[i]||'').trim()||(n===1?'Eu':'Pessoa '+(i+1)),body:c[0],gills:c[1],acc:'nenhum',accColor:'#8fd3f4',hand:'',spots:false})}
     const dn=$('wDream').value.trim(),dg=money($('wGoal').value);
     const sv=state.savings[0];if(dn)sv.name=dn;if(dg>0)sv.goal=dg;if(dn&&!/emerg/i.test(dn))sv.theme='classico';
-    F.payer=ids[0];F.inWho=ids[0];state.sel=0;state.onboarded=true;anim.length=0;save();
+    F.payer=ids[0];F.inWho=ids[0];state.sel=0;state.onboarded=true;anim.length=0;HU().biz=!!$('wBiz').checked;save();
     $('welcome').hidden=true;document.body.classList.remove('noscroll');showView('inicio');
     toast(n===1?'Olá, '+state.axos[0].name+'! Começa por registar o que recebes.':'Tudo pronto! Comecem por registar o que recebem.');
   });
@@ -3021,8 +3051,9 @@ function renderSyncInfo(){if($('setSheet').hidden)return;
 }
 setInterval(renderSyncInfo,1000);
 // --- folha de definições ---
-function openSet(){$('setSheet').hidden=false;document.body.classList.add('noscroll');askZero=false;$('zeroBtn').textContent='Começar do zero';renderSyncInfo();setTimeout(()=>$('setClose').focus(),60)}
+function openSet(){$('setBiz').checked=bizOn();$('setSheet').hidden=false;document.body.classList.add('noscroll');askZero=false;$('zeroBtn').textContent='Começar do zero';renderSyncInfo();setTimeout(()=>$('setClose').focus(),60)}
 function closeSet(){$('setSheet').hidden=true;document.body.classList.remove('noscroll');$('syncBtn').focus()}
+$('setBiz').addEventListener('change',e=>setBiz(e.target.checked));
 $('syncBtn').addEventListener('click',()=>{if(SYNC.status==='login'&&HAS_CID){connectDrive();return}openSet()});
 $('setClose').addEventListener('click',closeSet);$('setBack').addEventListener('click',closeSet);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('setSheet').hidden)closeSet()});
