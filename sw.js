@@ -1,5 +1,5 @@
 // Service worker: a app abre mesmo sem internet. Os pedidos ao Google nunca passam pela cache.
-const CACHE = 'savealotl-v18';
+const CACHE = 'savealotl-v20';
 const SHELL = ['./', './index.html', './config.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './maskable-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {

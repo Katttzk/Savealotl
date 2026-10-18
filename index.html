@@ -665,6 +665,27 @@ body[data-mode="full"] #paidToggle{display:none!important}
 
 /* Sem o quadrado azul do toque nos axolotls e no aquário */
 .stage,.stage *,#scene,#scene *{-webkit-tap-highlight-color:rgba(0,0,0,0);outline:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+.pageOv{position:fixed;inset:0;z-index:70;background:var(--bg);overflow-y:auto;padding:calc(14px + env(safe-area-inset-top,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px))}
+.pageOv[hidden]{display:none}
+.pageBox{max-width:520px;margin:0 auto}
+.pageBack{background:none;border:none;font:800 1rem Nunito,sans-serif;color:var(--accent);cursor:pointer;padding:6px 0;margin-bottom:4px}
+.pageBox h1{font:800 1.6rem/1.15 "Baloo 2",Nunito,sans-serif;margin:4px 0 6px}
+input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip);border:2px solid var(--line);border-radius:14px;padding:9px 12px}
+#repMsg{width:100%;font:inherit;color:var(--ink);background:var(--chip);border:2px solid var(--line);border-radius:14px;padding:10px 12px;resize:vertical;min-height:130px}
+#repMsg:focus-visible,input[type=email]:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.repCount{text-align:right;font-size:.78rem;color:var(--muted);margin:2px 0 10px;font-weight:700}
+#repStatus{margin:12px 0 0;font-weight:700;min-height:1.4em}
+#repStatus.err{color:#b45309}
+#repStatus.ok{color:#2f855a}
+.repHint{margin-top:12px;text-align:center}
+.repMail{display:block;text-align:center;text-decoration:none;margin-top:10px;padding:12px}
+.repMail[hidden]{display:none}
+.repThanks{text-align:center;padding:30px 8px}
+.repThanks[hidden],#repFormBox[hidden]{display:none}
+.repBig{font-size:3.4rem;line-height:1}
+#repSend:disabled{opacity:.6;cursor:default}
+.toggle .sw{flex:none}
 </style>
 </head>
 <body>
@@ -951,6 +972,10 @@ body[data-mode="full"] #paidToggle{display:none!important}
         <p class="note">Se também controlas despesas de um negócio, liga esta opção para ter a categoria Negócio e um grupo à parte nas despesas fixas. Desligada, fica tudo escondido.</p>
         <label class="toggle"><input type="checkbox" id="setBiz"><span class="sw"></span><span>Mostrar a opção Negócio</span></label>
       </section>
+      <section class="setBlock"><h3 class="h3">🛟 Reportar um problema</h3>
+        <p class="note">Encontraste algo que não funciona ou tens uma sugestão? Escreve-nos e respondemos por email.</p>
+        <div class="setBtns"><button type="button" class="ghostBtn" id="reportOpen">Reportar um problema</button></div>
+      </section>
       <section class="setBlock"><h3 class="h3">🧹 Dados de exemplo</h3>
         <p class="note">Apaga rendimentos, gastos, contas, listas e poupanças de exemplo para começares com os teus números. Os axolotls ficam.</p>
         <div class="setBtns"><button type="button" class="ghostBtn warnb" id="zeroBtn">Começar do zero</button></div>
@@ -1006,6 +1031,21 @@ body[data-mode="full"] #paidToggle{display:none!important}
   <div class="sheetBox" role="dialog" aria-modal="true" aria-labelledby="blkTitle">
     <div class="sheetHead"><h2 id="blkTitle">Editar</h2><button type="button" class="sheetClose" id="blkClose" aria-label="Fechar">×</button></div>
     <div class="sheetBody" id="blkBody"></div>
+  </div>
+</div>
+<div class="pageOv" id="reportPage" hidden>
+  <div class="pageBox" role="dialog" aria-modal="true" aria-labelledby="repTitle">
+    <button type="button" class="pageBack" id="repBack">‹ Voltar</button>
+    <h1 id="repTitle">🛟 Reportar um problema</h1>
+    <p class="note">Diz-nos o que se passou. Ao tocar em Enviar abrimos o teu email com a mensagem pronta para savealotl.support@gmail.com, e só tens de carregar em enviar.</p>
+    <span class="flabel">O que é?</span>
+    <div class="seg" id="repKind" role="tablist"><button type="button" role="tab" data-k="Problema" aria-selected="true">Problema</button><button type="button" role="tab" data-k="Sugestão">Sugestão</button><button type="button" role="tab" data-k="Outro">Outro</button></div>
+    <label class="field" style="margin-top:12px"><span class="flabel">Conta-nos o que aconteceu</span><textarea id="repMsg" maxlength="2000" rows="6" placeholder="Ex.: Ao tocar em + Registar, o teclado não abre. Estava no Início, no modo simples."></textarea></label>
+    <div class="repCount" id="repCount">0 / 2000</div>
+    <label class="toggle"><input type="checkbox" id="repInfo" checked><span class="sw"></span><span>Incluir informação técnica (tipo de telemóvel e versão da app). Nunca enviamos os teus valores.</span></label>
+    <p id="repStatus" role="status" aria-live="polite"></p>
+    <button type="button" class="cta" id="repSend">Enviar</button>
+    <p class="note repHint">Se o email não abrir, escreve-nos diretamente para <b>savealotl.support@gmail.com</b>.</p>
   </div>
 </div>
 <div class="reorderBar" id="reorderBar" hidden><span>↕ Arrasta os blocos para a ordem que preferires</span><button type="button" id="reorderDone">Pronto</button></div>
@@ -3108,6 +3148,35 @@ $('wSave').addEventListener('click',()=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('welcome').classList.contains('wedit')&&!$('welcome').hidden)closeWelcomeEdit()});
 {const got=collectSeason();if(got.length&&state.onboarded!==false)setTimeout(()=>toast(got.includes('halloween')?'🎃 Chegou o Halloween! Desbloqueaste acessórios para os axolotls e decorações para o aquário. Vê em ✎ → Coleção.':'🎄 Chegou o Natal! Desbloqueaste o fato de Pai Natal e 5 efeitos para o aquário. Vê em ✎ → Coleção.'),3200)}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const got=collectSeason();if(got.length){try{renderScene();rebuildAll(true)}catch(e){}toast(got.includes('halloween')?'🎃 Chegou o Halloween! Há novidades na Coleção.':'🎄 Chegou o Natal! Há novidades na Coleção.')}}});
+
+// ======================================================================
+// ---------- Reportar um problema (Definições): abre o email do telemóvel ----------
+// ======================================================================
+const APP_BUILD='v20 (2026-10-18)';
+const REPORT_TO='savealotl.support@gmail.com';
+let repKind='Problema';
+function techInfo(){let sync='desligada';try{sync=SYNC.on?'ligada ('+SYNC.status+')':'desligada'}catch(e){}
+  let inst='não';try{inst=matchMedia('(display-mode: standalone)').matches?'sim':'não'}catch(e){}
+  return ['Versão da app: '+APP_BUILD,'Ecrã: '+state.view+(state.view==='inicio'?(isSimple()?' (Início simples)':' (Início completo)'):''),'Aparelho: '+navigator.userAgent,'Janela: '+innerWidth+'x'+innerHeight,'Idioma: '+navigator.language,'App instalada: '+inst,'Sincronização: '+sync,'Data: '+new Date().toISOString()].join('\n')}
+function repStatus(msg,cls){const e=$('repStatus');e.textContent=msg||'';e.className=cls||''}
+function repMailto(){const msg=$('repMsg').value.trim(),info=$('repInfo').checked?techInfo():'';
+  const body=msg+(info?'\n\n--- Informação técnica ---\n'+info:'');
+  return 'mailto:'+REPORT_TO+'?subject='+encodeURIComponent('Savealotl: '+repKind)+'&body='+encodeURIComponent(body)}
+function openReport(){closeSet();repStatus('');$('repCount').textContent=$('repMsg').value.length+' / 2000';
+  $('reportPage').hidden=false;$('reportPage').scrollTop=0;document.body.classList.add('noscroll');setTimeout(()=>$('repBack').focus(),60)}
+function closeReport(){$('reportPage').hidden=true;document.body.classList.remove('noscroll')}
+function sendReport(){
+  if($('repMsg').value.trim().length<10){repStatus('Conta-nos um pouco mais (pelo menos 10 letras).','err');$('repMsg').focus();return}
+  const url=repMailto();window.__lastMailto=url;
+  const a=document.createElement('a');a.href=url;a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),400);
+  repStatus('Abrimos o teu email. Carrega em enviar lá para concluir. 💌','ok');
+}
+$('reportOpen').addEventListener('click',openReport);
+$('repBack').addEventListener('click',closeReport);
+$('repSend').addEventListener('click',sendReport);
+$('repMsg').addEventListener('input',e=>{$('repCount').textContent=e.target.value.length+' / 2000'});
+$('repKind').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;repKind=b.dataset.k;[...$('repKind').children].forEach(x=>x.setAttribute('aria-selected',String(x===b)))});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('reportPage').hidden)closeReport()});
 applyLearnOrder();
 showView(state.view);
 
