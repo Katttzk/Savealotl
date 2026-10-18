@@ -632,10 +632,38 @@ body[data-biz="0"] .bizTag,body[data-biz="0"] #bizLine,body[data-biz="0"] .bizc,
 .grpHead span{font-weight:700;font-size:.78rem}
 .grpHead.biz{color:#b45309}
 .wBizRow{margin:12px 0 0;font-size:.9rem}
+
+.heroRec{display:none;margin:2px 0 8px;color:var(--muted);font-weight:700;font-size:.9rem}
+.heroRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 12px}
+.streak{font-weight:800;font-size:.85rem;background:#fff4dc;color:#b45309;border:2px solid #f5c26b;border-radius:999px;padding:4px 12px}
+.streak[hidden]{display:none}
+.heroAdd{margin:0;width:auto;padding:10px 22px;font-size:1rem}
+body[data-mode="full"] .heroAdd{display:none}
+body[data-mode="simple"] .heroRec{display:block}
+body[data-mode="simple"] #sumGrid{grid-template-columns:repeat(3,1fr);gap:6px}
+body[data-mode="simple"] .tile[data-k="rec"]{display:none}
+body[data-mode="simple"] .tile{padding:8px 10px}
+body[data-mode="simple"] .tile span{display:none}
+body[data-mode="simple"] .tile b{font-size:1.05rem}
+body[data-mode="simple"] #v-inicio .note:not(#perDay),body[data-help="0"] #v-inicio .note:not(#perDay){display:none}
+body[data-mode="simple"] [data-sec="spend"] .quickSpend,body[data-mode="simple"] [data-sec="spend"] #spNote,body[data-mode="simple"] [data-sec="spend"] #payer,body[data-mode="simple"] [data-sec="spend"] #catGrid{display:none!important}
+body[data-mode="simple"] #billList .fi.done{display:none}
+body[data-mode="simple"].showPaid #billList .fi.done{display:flex}
+body[data-mode="full"] #paidToggle{display:none!important}
+#paidToggle[hidden]{display:none!important}
+.modeLink{display:block;margin:16px auto 6px;background:none;border:none;color:var(--muted);font:700 .9rem Nunito,sans-serif;cursor:pointer;text-decoration:underline}
+.recap{background:var(--chip);border:2px solid var(--line);border-radius:16px;padding:12px 14px;margin-top:12px}
+.recap[hidden]{display:none}
+.recap ul{margin:6px 0 10px;padding-left:18px}
+.recap li{font-size:.9rem;margin:2px 0}
+.demoBar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff4dc;color:#b45309;border:2px solid #f5c26b;border-radius:14px;padding:8px 12px;margin:0 56px 12px 0;font-weight:800;font-size:.85rem}
+.demoBar[hidden]{display:none}
+.demoBar button{font:800 .8rem Nunito,sans-serif;border:none;border-radius:999px;padding:6px 12px;background:#b45309;color:#fff;cursor:pointer;white-space:nowrap}
 </style>
 </head>
 <body>
 <div class="app">
+  <div class="demoBar" id="demoBar" hidden><span>🧪 Estás a ver dados de exemplo</span><button type="button" id="demoStart">Começar a sério</button></div>
   <button type="button" class="syncBtn" id="syncBtn" data-st="off" aria-label="Definições e sincronização"><span aria-hidden="true">☁️</span><i></i></button>
   <section class="view" id="v-inicio" hidden>
     <h1 class="sr" id="homeH">Início</h1>
@@ -647,10 +675,13 @@ body[data-biz="0"] .bizTag,body[data-biz="0"] #bizLine,body[data-biz="0"] .bizc,
         <div class="row"><h2>Este mês</h2><button type="button" class="mini-edit" data-edit="sum">✎ Editar</button></div>
         <p class="big" id="leftMonth"></p>
         <p class="note" id="perDay"></p>
+        <p class="heroRec" id="heroRec"></p>
+        <div class="heroRow"><span class="streak" id="streakChip" hidden></span><button type="button" class="cta heroAdd" id="heroAdd">＋ Registar</button></div>
         <div class="sumGrid" id="sumGrid"></div>
         <p class="bizLine" id="bizLine" hidden></p>
         <button type="button" class="simBtn" data-go="simular">🧮 Recebi dinheiro: onde guardo?</button>
         <button type="button" class="tipBtn" id="tipOfDay" data-go="aprender"></button>
+        <div class="recap" id="recapCard" hidden></div>
       </section>
       <section class="panel" data-sec="inc" aria-label="Rendimentos">
         <div class="row"><h2>Rendimentos</h2><button type="button" class="mini-edit" id="editSrc" data-edit="inc">✎ Editar</button></div>
@@ -672,6 +703,7 @@ body[data-biz="0"] .bizTag,body[data-biz="0"] #bizLine,body[data-biz="0"] .bizc,
         <p class="note">Renda, luz, água, internet, seguros… Marca com ✓ o que já está pago este mês.</p>
         <div class="split"><div><small>Liquidado</small><b id="billPaid"></b></div><div><small>Falta liquidar</small><b id="billLeft" class="accent"></b></div></div>
         <div class="bar" aria-hidden="true"><span id="billBar"></span></div>
+        <button type="button" class="mini-edit" id="paidToggle" hidden></button>
         <ul class="flist" id="billList"></ul>
         <div class="addPair"><button type="button" class="addLine" id="billAdd">+ Adicionar despesa</button><button type="button" class="addLine" id="billAddBiz">+ Despesa do negócio</button></div>
       </section>
@@ -687,6 +719,7 @@ body[data-biz="0"] .bizTag,body[data-biz="0"] #bizLine,body[data-biz="0"] .bizc,
         <div class="hist" id="spHist"></div>
       </section>
     </div>
+    <button type="button" class="modeLink" id="modeSwitch"></button>
   </section>
   <section class="view" id="v-dia" hidden>
     <div class="homeTop"><p class="dateLine">Dia-a-dia</p><button type="button" class="mini-edit" data-edit="dia">✎ Editar</button></div>
@@ -948,6 +981,9 @@ body[data-biz="0"] .bizTag,body[data-biz="0"] #bizLine,body[data-biz="0"] .bizc,
   <div class="sheetBox" role="dialog" aria-modal="true" aria-labelledby="homeSheetTitle">
     <div class="sheetHead"><h2 id="homeSheetTitle">Personalizar o Início</h2><button type="button" class="sheetClose" id="homeClose" aria-label="Fechar">×</button></div>
     <div class="sheetBody">
+      <span class="flabel">Aspeto do Início</span>
+      <div class="seg" id="modeSeg" role="tablist"><button type="button" role="tab" data-m="simple">Simples</button><button type="button" role="tab" data-m="full">Completo</button></div>
+      <p class="note">O Simples mostra o essencial: o que ainda podes gastar e as contas por pagar. O Completo mostra tudo.</p>
       <p class="note">Escolhe o que queres ver, a ordem e os nomes. Isto só muda neste telemóvel, por isso cada pessoa pode ter o seu Início. Dica: para mudar a ordem mais depressa, mantém o dedo uns segundos no título de um bloco e arrasta.</p>
       <span class="flabel">Blocos do Início</span>
       <ul class="homeList" id="homeList"></ul>
@@ -982,12 +1018,15 @@ body[data-biz="0"] .bizTag,body[data-biz="0"] #bizLine,body[data-biz="0"] .bizc,
     <span class="flabel" id="wNamesLabel">Como te chamas?</span>
     <div id="wNames"></div>
     <div class="wMore" id="wMore"><button type="button" class="mini-edit" id="wAdd">+ Mais uma pessoa</button><button type="button" class="mini-edit" id="wRem">− Menos uma</button></div>
+    <span class="flabel" style="margin-top:12px">Recebes…</span>
+    <div class="seg" id="wPay" role="tablist"><button type="button" role="tab" data-p="mes" aria-selected="true">Ao mês</button><button type="button" role="tab" data-p="semana">À semana</button><button type="button" role="tab" data-p="dia">Ao dia</button></div>
     <span class="flabel" style="margin-top:12px">O primeiro sonho (opcional)</span>
     <div class="pair"><input type="text" id="wDream" maxlength="60" placeholder="Fundo de emergência" aria-label="Nome do primeiro sonho"><input type="number" id="wGoal" min="1" step="any" inputmode="decimal" placeholder="1000 €" aria-label="Valor do objetivo"></div>
     <label class="toggle wBizRow"><input type="checkbox" id="wBiz"><span class="sw"></span><span>Também vou controlar despesas de um negócio</span></label>
     <button type="button" class="cta" id="wGo">Começar 🦎</button>
-    <p class="note" style="margin:10px 0 0;text-align:center">Tudo fica guardado neste telemóvel. Podes ligar ao Google Drive depois, na nuvem ☁️.</p>
+    <p class="note" style="margin:10px 0 0;text-align:center">🔒 Os teus dados ficam no teu telemóvel e, se quiseres, no teu Google Drive. Sem anúncios e sem ligação ao banco.</p>
     <button type="button" class="ghostBtn wJoin" id="wJoin">Já usamos a Savealotl noutro telemóvel: ligar ao Google Drive</button>
+    <button type="button" class="ghostBtn wJoin" id="wDemo">🧪 Experimentar com dados de exemplo</button>
   </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1903,16 +1942,19 @@ document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g
 
 // ---------- Início ----------
 function renderHome(){
-  applyBiz();
+  applyBiz();applyMode();
   const d=new Date(),k=MK(),day=d.getDate(),left_days=dim(d)-day+1;
   $('dateLine').textContent=monthName(d).replace(/^./,c=>c.toUpperCase());
   const M=incomeNow(),B=billsM(),V=spentM(),S=savedThisMonth(),P=planM(),keep=Math.max(Math.min(P,Math.max(0,M-B-V)),S);
   const free=M-B-V-keep;
   $('leftMonth').textContent=M<=0&&!F.spends.length?'Vamos começar! 🦎':free>=0?'Ainda podes gastar '+fmt(free):'Passaste '+fmt(-free)+' do previsto';
   $('leftMonth').classList.toggle('neg',free<0);
-  $('perDay').textContent=M<=0?'Começa por pôr os teus rendimentos aqui em baixo. Tudo o resto parte daí.'
-    :free>0?'Cerca de '+fmt(free/left_days)+' por dia até ao fim do mês, já a contar com '+fmt(keep)+' para poupar e com as despesas fixas.'
+  $('perDay').textContent=M<=0?(isSimple()?'Começa por registar o que recebes: toca em ＋ Registar.':'Começa por pôr os teus rendimentos aqui em baixo. Tudo o resto parte daí.')
+    :free>0?(isSimple()?'≈ '+fmt(free/left_days)+' por dia até ao fim do mês':'Cerca de '+fmt(free/left_days)+' por dia até ao fim do mês, já a contar com '+fmt(keep)+' para poupar e com as despesas fixas.')
     :'Não faz mal, acontece. Nos próximos dias tenta ficar só pelo essencial, e vê as dicas no separador Aprender.';
+  $('heroRec').textContent='Recebido este mês: '+fmt(receivedM());
+  {const st=streak();$('streakChip').hidden=st<2;$('streakChip').textContent='🔥 '+st+' dias seguidos a registar'}
+  renderRecap();
   const recv=receivedM();
   const billLeft=F.bills.filter(b=>!b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0);
   $('sumGrid').innerHTML='';
@@ -2027,6 +2069,7 @@ function renderBills(){
   const paid=F.bills.filter(b=>b.paid[k]).reduce((a,b)=>a+(+b.amount||0),0),tot=billsM();
   $('billPaid').textContent=fmt(paid);$('billLeft').textContent=fmt(tot-paid);$('billBar').style.width=(tot?paid/tot*100:0)+'%';
   $('billAdd').textContent=on?'+ Despesa pessoal':'+ Adicionar despesa';
+  {const nP=F.bills.filter(b=>b.paid[k]).length,pt=$('paidToggle');pt.hidden=!(nP>0);pt.textContent=document.body.classList.contains('showPaid')?'Esconder as pagas':'Mostrar as pagas ('+nP+')'}
   const ul=$('billList');ul.innerHTML='';
   const sorted=[...F.bills].sort((a,b)=>(!!a.paid[k])-(!!b.paid[k])||(a.due||99)-(b.due||99));
   const addRow=b=>{
@@ -2073,7 +2116,7 @@ function renderSpend(){
   $('spToday').textContent=fmt(mon.filter(s=>new Date(s.t).toDateString()===today).reduce((a,s)=>a+s.v,0));
   $('spMonth').textContent=fmt(mon.reduce((a,s)=>a+s.v,0));
   const ul=$('budgets');ul.innerHTML='';
-  visCats().forEach(c=>{
+  visCats().filter(c=>!isSimple()||catMonth(c)>0||(+c.budget||0)>0).forEach(c=>{
     const li=el('li','bud'+(editCats?' editing':''));
     if(editCats){
       li.innerHTML=`<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da categoria"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Orçamento mensal" placeholder="Sem limite"> €/mês</label><label class="bess"><input type="checkbox"> Essencial</label><label class="bess bizc"><input type="checkbox"> Negócio</label><button type="button" class="ckx">×</button>`;
@@ -2495,7 +2538,7 @@ function noteMatch(note,isInc){const n=note.trim().toLowerCase();if(!n)return nu
 $('qaNote').addEventListener('change',e=>{const t=F.qa.t;const m=noteMatch(e.target.value,t==='in');if(m){e.target.value=m.note;if(t==='in')F.qa.src=m.id;else F.qa.c=m.id;renderQA()}});
 $('spNote').addEventListener('change',e=>{const m=noteMatch(e.target.value,false);if(m)e.target.value=m.note});
 $('spNote').addEventListener('focus',fillNotes);$('qaNote').addEventListener('focus',fillNotes);
-function refreshView(){const v=state.view;if(v==='inicio')renderHome();else if(v==='dia')renderLists();else if(v==='poupancas'){rebuildAll();renderScene();renderPanel()}else if(v==='simular')renderSim();else if(v==='aprender')renderLearn()}
+function refreshView(){const v=state.view;if(v==='inicio')renderHome();else if(v==='dia')renderLists();else if(v==='poupancas'){rebuildAll();renderScene();renderPanel()}else if(v==='simular')renderSim();else if(v==='aprender')renderLearn();afterRecord()}
 
 // ======================================================================
 // ---------- Mascotes animadas nos separadores sem aquário ----------
@@ -2573,7 +2616,7 @@ const DEF_ORDER=['aq','sum','spend','bills','inc'];
 const TAB_LIST=[['dia','🛒','Dia-a-dia'],['poupancas','🐠','Poupanças'],['simular','🧮','Simular'],['aprender','💡','Aprender']];
 function HU(){if(!state.homeUI||typeof state.homeUI!=='object')state.homeUI={};const h=state.homeUI;
   if(!Array.isArray(h.order))h.order=DEF_ORDER.slice();h.order=h.order.filter(id=>DEF_ORDER.includes(id));DEF_ORDER.forEach(id=>{if(!h.order.includes(id))h.order.push(id)});
-  h.o=h.o||{};h.off=h.off||{};h.col=h.col||{};h.names=h.names||{};h.tabs=h.tabs||{};return h}
+  h.o=h.o||{};h.off=h.off||{};h.col=h.col||{};h.colS=h.colS||{};h.names=h.names||{};h.tabs=h.tabs||{};return h}
 function setupSections(){
   SECS.forEach(([id,def,coll])=>{
     const sec=document.querySelector('#v-inicio [data-sec="'+id+'"]');if(!sec||sec.dataset.ready||!coll)return;sec.dataset.ready='1';
@@ -2584,7 +2627,7 @@ function setupSections(){
     const sum=document.createElement('p');sum.className='secSum';sum.id='secSum_'+id;sum.hidden=true;sum.setAttribute('aria-live','polite');
     const body=document.createElement('div');body.className='secBody';[...sec.children].filter(c=>c!==head).forEach(c=>body.appendChild(c));
     sec.appendChild(sum);sec.appendChild(body);
-    btn.addEventListener('click',()=>{const h=HU();h.col[id]=!h.col[id];save();applyHome()});
+    btn.addEventListener('click',()=>{const h=HU();if(isSimple()){const cur=h.colS[id]!==undefined?!!h.colS[id]:id==='inc';h.colS[id]=!cur}else h.col[id]=!h.col[id];save();applyHome()});
   });
 }
 function updateSecSums(){
@@ -2596,11 +2639,12 @@ function updateSecSums(){
   set('spend','Hoje '+fmt(spendsIn(k).filter(x=>new Date(x.t).toDateString()===today).reduce((a,x)=>a+x.v,0))+'. Este mês '+fmt(spentM())+' no dia a dia.');
 }
 function applyHome(){
+  applyMode();
   const h=HU(),stack=document.querySelector('#v-inicio .stack');if(!stack)return;
   h.order.forEach(id=>{const sec=stack.querySelector('[data-sec="'+id+'"]');if(sec)stack.appendChild(sec)});
   SECS.forEach(([id,def,coll])=>{const sec=stack.querySelector('[data-sec="'+id+'"]');if(!sec)return;
     sec.classList.toggle('secOff',!!h.off[id]);
-    if(coll){const c=!!h.col[id];sec.classList.toggle('collapsed',c);const b=sec.querySelector('.colBtn');
+    if(coll){const c=isSimple()?(h.colS[id]!==undefined?!!h.colS[id]:id==='inc'):!!h.col[id];sec.classList.toggle('collapsed',c);const b=sec.querySelector('.colBtn');
       if(b){b.setAttribute('aria-expanded',String(!c));b.querySelector('.secTitle').textContent=h.names[id]||def;sec.setAttribute('aria-label',h.names[id]||def)}
       const sm=document.getElementById('secSum_'+id);if(sm)sm.hidden=!c}});
   document.querySelectorAll('#tabbar button').forEach(b=>{const v=b.dataset.view;b.hidden=v!=='inicio'&&h.tabs[v]===false});
@@ -2627,7 +2671,7 @@ function renderHomeSheet(){
     cb.addEventListener('change',()=>{if(cb.checked)delete h.tabs[v];else h.tabs[v]=false;save();applyHome();if(!cb.checked&&state.view===v)showView('inicio')});
     tl.appendChild(li)});
 }
-$('homeCustom').addEventListener('click',()=>{renderHomeSheet();$('homeSheet').hidden=false;document.body.classList.add('noscroll');setTimeout(()=>$('homeClose').focus(),60)});
+$('homeCustom').addEventListener('click',()=>{applyMode();renderHomeSheet();$('homeSheet').hidden=false;document.body.classList.add('noscroll');setTimeout(()=>$('homeClose').focus(),60)});
 function closeHomeSheet(){$('homeSheet').hidden=true;document.body.classList.remove('noscroll');$('homeCustom').focus()}
 $('homeClose').addEventListener('click',closeHomeSheet);$('homeBack').addEventListener('click',closeHomeSheet);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('homeSheet').hidden)closeHomeSheet()});
@@ -2866,6 +2910,65 @@ function beginTileDrag(D,id,cx0,cy0,lp){
   document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
   pos(cx0,cy0)}
 {const h=HU();if(!h.hintRe&&state.onboarded!==false&&state.view==='inicio'){h.hintRe=true;save();setTimeout(()=>{if(!RE.mode)toast('Dica: mantém o dedo uns segundos no título de um bloco para o arrastar e mudar a ordem.')},2600)}}
+
+// ======================================================================
+// ---------- Início simples, hábito, resumo semanal e modo de exemplo ----------
+// ======================================================================
+function isSimple(){return HU().mode!=='full'}
+function applyMode(){
+  const simple=isSimple();document.body.dataset.mode=simple?'simple':'full';
+  const age=Date.now()-(F.startedAt||Date.now());document.body.dataset.help=(!state.demo&&age>7*864e5)?'0':'1';
+  const ms=$('modeSwitch');if(ms)ms.textContent=simple?'Ver o Início completo ›':'‹ Voltar ao Início simples';
+  const sg=$('modeSeg');if(sg)[...sg.children].forEach(b=>b.setAttribute('aria-selected',String(b.dataset.m===(simple?'simple':'full'))));
+}
+function setMode(m){HU().mode=m;save();applyHome();renderHome();window.scrollTo({top:0})}
+$('modeSwitch').addEventListener('click',()=>setMode(isSimple()?'full':'simple'));
+$('modeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b)setMode(b.dataset.m)});
+$('paidToggle').addEventListener('click',()=>{document.body.classList.toggle('showPaid');renderBills()});
+$('heroAdd').addEventListener('click',()=>openQA(receivedM()<=0&&!F.spends.length?'in':'out'));
+// --- hábito: dias seguidos a registar ---
+function dayKey(t){const d=new Date(t);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate()}
+function streak(){const days=new Set([...F.spends,...F.recv].map(x=>dayKey(x.t)));state.savings.forEach(sv=>(sv.log||[]).forEach(m=>days.add(dayKey(m.t))));
+  let n=0;const d=new Date();if(!days.has(dayKey(d)))d.setDate(d.getDate()-1);while(days.has(dayKey(d))){n++;d.setDate(d.getDate()-1)}return n}
+function afterRecord(){
+  try{if(state.view==='inicio'&&A.length)state.axos.forEach((_,i)=>{if(anim[i]&&A[i]){anim[i].joy=Math.max(anim[i].joy||0,1.8);pop(i,3,'heart')}});
+    const n=streak(),h=HU();if([3,7,14,30,60,100].includes(n)&&h.streakShown!==n){h.streakShown=n;save();setTimeout(()=>toast('🔥 '+n+' dias seguidos a registar! Os axolotls estão orgulhosos.'),700)}}catch(e){}}
+// --- resumo da semana passada ---
+function weekStartTs(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()}
+function renderRecap(){
+  const box=$('recapCard');if(!box)return;const h=HU(),ws=weekStartTs(new Date()),ps=ws-7*864e5,pps=ps-7*864e5;
+  if(h.recapDone===ws){box.hidden=true;return}
+  const inR=x=>x.t>=ps&&x.t<ws,sp=F.spends.filter(inR),rc=F.recv.filter(inR);
+  if(!sp.length&&!rc.length){box.hidden=true;return}
+  const tot=sp.reduce((a,x)=>a+x.v,0),prev=F.spends.filter(x=>x.t>=pps&&x.t<ps).reduce((a,x)=>a+x.v,0);
+  const days=new Set([...sp,...rc].map(x=>dayKey(x.t))).size;let saved=0;state.savings.forEach(sv=>(sv.log||[]).forEach(m=>{if(m.t>=ps&&m.t<ws)saved+=m.v}));
+  const byC={};sp.forEach(x=>{byC[x.c]=(byC[x.c]||0)+x.v});const top=Object.entries(byC).sort((a,b)=>b[1]-a[1])[0];
+  const lines=['Gastaste '+fmt(tot)+(prev>0?(tot<=prev?' ('+fmt(prev-tot)+' a menos do que na semana anterior)':' ('+fmt(tot-prev)+' a mais do que na semana anterior)'):'')+'.','Registaste em '+days+' de 7 dias.'];
+  if(saved>0)lines.push('Guardaste '+fmt(saved)+' nas poupanças.');
+  if(top){const c=catOf(top[0]);lines.push('O que mais pesou: '+(c.emoji||'')+' '+c.name+' ('+fmt(top[1])+').')}
+  box.innerHTML='<b>📅 A tua semana passada</b><ul></ul><button type="button" class="ghostBtn sm" id="recapOk">Ok</button>';
+  const ul=box.querySelector('ul');lines.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li)});
+  box.querySelector('#recapOk').addEventListener('click',()=>{h.recapDone=ws;save();box.hidden=true});box.hidden=false;
+}
+// --- modo de exemplo ---
+function loadDemo(){
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth(),td=now.getDate();
+  const at=(d,h)=>new Date(y,m,Math.max(1,Math.min(d,td)),h||12,10).getTime();
+  state.axos=[{id:'a1',name:'Ana',body:'#ffd6e2',gills:'#f47fa4',acc:'laco',accColor:'#8fd3f4',hand:'moeda',spots:false},{id:'a2',name:'Rui',body:'#bcd4f6',gills:'#7f95e6',acc:'nenhum',accColor:'#ffd45a',hand:'',spots:false}];
+  const f=seedFin();f.payer='a1';f.inWho='a1';f.srcs[0].expected=1250;
+  f.recv=[{id:uid(),src:'f1',v:1250,t:at(1),w:'a1',per:'mes'},{id:uid(),src:'f2',v:60,t:at(3),w:'a2'},{id:uid(),src:'f2',v:45,t:at(6),w:'a2'},{id:uid(),src:'f3',v:30,t:at(9),w:'a1'}];
+  f.bills=[{id:'b1',name:'Renda',amount:420,due:1,paid:{[MK()]:true}},{id:'b2',name:'Eletricidade',amount:55,due:10,paid:{}},{id:'b3',name:'Internet e telemóvel',amount:40,due:15,paid:{}}];
+  const sp=(c,v,d,w,note)=>{const o={id:uid(),c,v,t:at(d,9+(d%9)),w};if(note)o.note=note;return o};
+  f.spends=[sp('c1',64.3,2,'a1','Continente'),sp('c3',4.2,3,'a2'),sp('c2',28.9,5,'a1','Loja dos animais'),sp('c4',45,6,'a2'),sp('c1',52.75,9,'a2','Pingo Doce'),sp('c3',3.8,10,'a1'),sp('c7',18,12,''),sp('c8',15,13,'a1','Action')];
+  const d8=new Date();d8.setMonth(d8.getMonth()+8);
+  state.savings=[{id:'s1',name:'Viagem a Bali',goal:2000,theme:'ferias',by:{a1:90,a2:60},off:{},log:[{id:uid(),a:'a1',v:90,t:at(2)},{id:uid(),a:'a2',v:60,t:at(5)}],items:[{id:uid(),name:'Voos',amount:900},{id:uid(),name:'Alojamento',amount:800},{id:uid(),name:'Passeios',amount:300}],deadline:d8.toISOString().slice(0,10)},
+    {id:'s2',name:'Fundo de emergência',goal:1500,theme:'pirata',by:{a1:50},off:{},log:[{id:uid(),a:'a1',v:50,t:at(4)}],items:[]}];
+  f.startedAt=Date.now()-20*864e5;f.bizAdded=true;
+  state.fin=f;state.demo=true;state.onboarded=true;state.cur=0;state.sel=0;state.view='inicio';state.homeUI={};
+  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}location.reload();
+}
+$('demoBar').hidden=!state.demo;
+$('demoStart').addEventListener('click',()=>{if(!confirm('Apagar os dados de exemplo e começar a sério?'))return;try{localStorage.removeItem(KEY);localStorage.removeItem('sav-base')}catch(e){}location.reload()});
 applyLearnOrder();
 showView(state.view);
 
@@ -2885,13 +2988,18 @@ showView(state.view);
   $('wMode').addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;n=+b.dataset.n;draw();const f=$('wNames').querySelector('input');if(f)f.focus()});
   $('wAdd').addEventListener('click',()=>{if(n<MAX){n++;draw()}});
   $('wRem').addEventListener('click',()=>{if(n>3){n--;draw()}});
+  $('wPay').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;[...$('wPay').children].forEach(x=>x.setAttribute('aria-selected',String(x===b)))});
+  $('wDemo').addEventListener('click',()=>loadDemo());
   $('wGo').addEventListener('click',()=>{
     const ids=[];state.axos=[];
     for(let i=0;i<n;i++){const id='a'+uid();ids.push(id);const c=MC[i%6];
       state.axos.push({id,name:(names[i]||'').trim()||(n===1?'Eu':'Pessoa '+(i+1)),body:c[0],gills:c[1],acc:'nenhum',accColor:'#8fd3f4',hand:'',spots:false})}
     const dn=$('wDream').value.trim(),dg=money($('wGoal').value);
     const sv=state.savings[0];if(dn)sv.name=dn;if(dg>0)sv.goal=dg;if(dn&&!/emerg/i.test(dn))sv.theme='classico';
-    F.payer=ids[0];F.inWho=ids[0];state.sel=0;state.onboarded=true;anim.length=0;HU().biz=!!$('wBiz').checked;save();
+    F.payer=ids[0];F.inWho=ids[0];state.sel=0;state.onboarded=true;anim.length=0;HU().biz=!!$('wBiz').checked;
+    {const h=HU(),pb=document.querySelector('#wPay [aria-selected="true"]'),pm=pb?pb.dataset.p:'mes';h.o.inc={};if(pm==='mes'){h.o.inc.p_dia=false;h.o.inc.p_semana=false}else if(pm==='semana'){h.o.inc.p_dia=false}
+      F.period=pm;h.colS.inc=(pm==='mes');h.col.inc=(pm==='mes')}
+    save();applyHome();
     $('welcome').hidden=true;document.body.classList.remove('noscroll');showView('inicio');
     toast(n===1?'Olá, '+state.axos[0].name+'! Começa por registar o que recebes.':'Tudo pronto! Comecem por registar o que recebem.');
   });
@@ -2990,6 +3098,7 @@ async function ensureFile(){
 }
 const typing=()=>{const a=document.activeElement;return !!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox'&&a.type!=='range')};
 async function syncNow(){
+  if(state.demo)return;
   if(!SYNC.on||!HAS_CID)return;
   if(SYNC.busy){SYNC.again=true;return}
   if(typing()){SYNC.later=true;return}
@@ -3022,6 +3131,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('online',()=>{if(SYNC.on&&SYNC.token)syncNow()});
 window.addEventListener('offline',()=>setSyncStatus('offline'));
 async function connectDrive(){
+  if(state.demo){toast('Sai do modo de exemplo (Começar a sério) antes de ligar ao Google Drive.');return}
   if(!HAS_CID){toast('Falta configurar o Client ID do Google (ver LEIA-ME).');return}
   if(!gisReady()){toast('O Google ainda está a carregar. Tenta daqui a uns segundos.');return}
   try{const needConsent=(!SYNC.token&&localStorage.getItem('sav-sync')!=='1')||(SYNC.lastErr&&(SYNC.lastErr.code==='scope'||SYNC.lastErr.code===403));if(needConsent)SYNC.token=null;await getToken(needConsent);SYNC.on=true;localStorage.setItem('sav-sync','1');await syncNow();toast('Ligado ao Google Drive. As alterações passam para o outro telemóvel em cerca de 5 segundos.')}
