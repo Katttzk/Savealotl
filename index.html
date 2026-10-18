@@ -659,6 +659,9 @@ body[data-mode="full"] #paidToggle{display:none!important}
 .demoBar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff4dc;color:#b45309;border:2px solid #f5c26b;border-radius:14px;padding:8px 12px;margin:0 56px 12px 0;font-weight:800;font-size:.85rem}
 .demoBar[hidden]{display:none}
 .demoBar button{font:800 .8rem Nunito,sans-serif;border:none;border-radius:999px;padding:6px 12px;background:#b45309;color:#fff;cursor:pointer;white-space:nowrap}
+
+.welcome.wedit #wGo,.welcome.wedit #wJoin,.welcome.wedit #wDemo,.welcome.wedit #wDreamBox,.welcome.wedit #wModeBox,.welcome.wedit #wMore{display:none!important}
+.welcome:not(.wedit) #wSave,.welcome:not(.wedit) #wCancel{display:none}
 </style>
 </head>
 <body>
@@ -989,6 +992,8 @@ body[data-mode="full"] #paidToggle{display:none!important}
       <ul class="homeList" id="homeList"></ul>
       <span class="flabel" style="margin-top:14px">Menu de baixo</span>
       <ul class="homeList" id="homeTabs"></ul>
+      <button type="button" class="ghostBtn" id="homeWelcome" style="margin-top:12px">👋 Rever as boas-vindas</button>
+      <p class="note" style="margin:6px 0 0">Muda se tens negócio, quando recebes e os nomes, sem perder nenhum registo.</p>
       <button type="button" class="ghostBtn" id="homeReset" style="margin-top:12px">Repor o padrão</button>
     </div>
   </div>
@@ -1012,21 +1017,27 @@ body[data-mode="full"] #paidToggle{display:none!important}
   <div class="wBox" role="dialog" aria-modal="true" aria-labelledby="wTitle">
     <img src="icon-192.png" alt="" class="wLogo" width="96" height="96">
     <h1 id="wTitle">Olá! Bem-vindo(a) ao Savealotl</h1>
-    <p class="note">Aqui cada poupança tem o seu aquário. Os axolotls nascem bebés e crescem à medida que vais guardando dinheiro.</p>
+    <p class="note wIntro">Aqui cada poupança tem o seu aquário. Os axolotls nascem bebés e crescem à medida que vais guardando dinheiro.</p>
+    <div id="wModeBox">
     <span class="flabel">Vais poupar…</span>
     <div class="seg" id="wMode" role="tablist"><button type="button" role="tab" data-n="1">Sozinho/a</button><button type="button" role="tab" data-n="2">A dois</button><button type="button" role="tab" data-n="3">Em grupo</button></div>
+    </div>
     <span class="flabel" id="wNamesLabel">Como te chamas?</span>
     <div id="wNames"></div>
     <div class="wMore" id="wMore"><button type="button" class="mini-edit" id="wAdd">+ Mais uma pessoa</button><button type="button" class="mini-edit" id="wRem">− Menos uma</button></div>
     <span class="flabel" style="margin-top:12px">Recebes…</span>
     <div class="seg" id="wPay" role="tablist"><button type="button" role="tab" data-p="mes" aria-selected="true">Ao mês</button><button type="button" role="tab" data-p="semana">À semana</button><button type="button" role="tab" data-p="dia">Ao dia</button></div>
+    <div id="wDreamBox">
     <span class="flabel" style="margin-top:12px">O primeiro sonho (opcional)</span>
     <div class="pair"><input type="text" id="wDream" maxlength="60" placeholder="Fundo de emergência" aria-label="Nome do primeiro sonho"><input type="number" id="wGoal" min="1" step="any" inputmode="decimal" placeholder="1000 €" aria-label="Valor do objetivo"></div>
+    </div>
     <label class="toggle wBizRow"><input type="checkbox" id="wBiz"><span class="sw"></span><span>Também vou controlar despesas de um negócio</span></label>
     <button type="button" class="cta" id="wGo">Começar 🦎</button>
     <p class="note" style="margin:10px 0 0;text-align:center">🔒 Os teus dados ficam no teu telemóvel e, se quiseres, no teu Google Drive. Sem anúncios e sem ligação ao banco.</p>
     <button type="button" class="ghostBtn wJoin" id="wJoin">Já usamos a Savealotl noutro telemóvel: ligar ao Google Drive</button>
     <button type="button" class="ghostBtn wJoin" id="wDemo">🧪 Experimentar com dados de exemplo</button>
+    <button type="button" class="cta" id="wSave">Guardar alterações</button>
+    <button type="button" class="ghostBtn wJoin" id="wCancel">Cancelar</button>
   </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1331,9 +1342,11 @@ function axoSVG(i){
   const bcy=58+20*bf,brx=54*bf,bry=50*bf;
   let s=`<g class="bob">`;
   s+=`<g class="tail" data-x="${side*brx*0.45}" data-y="${bcy+bry*0.45}"><g transform="scale(${side*tl},${tl})"><path class="ol" d="${TAIL}" fill="${B}"/><path d="${FIN}" fill="${finC}" opacity=".85"/><path d="M30,16 Q44,40 46,68 M24,36 Q34,60 32,92 M36,10 Q54,34 56,60 M40,74 Q44,92 36,106" stroke="${mix(finC,Gc,0.5)}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".8"/><circle cx="18" cy="6" r="3" fill="${mix(B,Gc,0.5)}" opacity=".7"/><circle cx="26" cy="22" r="2.4" fill="${mix(B,Gc,0.5)}" opacity=".7"/></g></g>`;
+  s+=outfitBack(a,bcy,bry);
   s+=`<ellipse class="ol" cx="0" cy="${bcy}" rx="${brx}" ry="${bry}" fill="${B}"/><ellipse cx="0" cy="${bcy+6}" rx="${brx*0.58}" ry="${bry*0.55}" fill="#fff" opacity=".25"/>`;
+  s+=outfitBody(a,bcy,brx,bry);
   [-1,1].forEach(sd=>{const fx=sd*24*bf,fy=bcy+bry-6;s+=`<ellipse class="ol" cx="${fx}" cy="${fy}" rx="15" ry="11" fill="${B}"/><path d="M${fx-5},${fy+3} v6 M${fx+5},${fy+3} v6" stroke="${OL}" stroke-width="3" stroke-linecap="round"/>`});
-  if(!a.hand)[-1,1].forEach(sd=>{s+=`<g class="arm" data-s="${sd}" data-x="${sd*(brx-8)}" data-y="${bcy-bry*0.35}"><path class="ol" d="M-10,-2 C-12,12 -10,24 0,26 C10,24 12,12 10,-2 Z" fill="${B}"/><path d="M-3.5,18 v6 M3.5,18 v6" stroke="${OL}" stroke-width="3" stroke-linecap="round"/></g>`});
+  if(!a.hand)[-1,1].forEach(sd=>{s+=`<g class="arm" data-s="${sd}" data-x="${sd*(brx-8)}" data-y="${bcy-bry*0.35}"><path class="ol" d="M-10,-2 C-12,12 -10,24 0,26 C10,24 12,12 10,-2 Z" fill="${oOn(a,'santa')?'#d6384a':B}"/>${oOn(a,'santa')?'<path d="M-10.5,16 Q0,23 10.5,16" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>':''}<path d="M-3.5,18 v6 M3.5,18 v6" stroke="${OL}" stroke-width="3" stroke-linecap="round"/></g>`});
   GP.forEach(([x,y,ang],k)=>[-1,1].forEach(sd=>{s+=`<g class="gill" data-x="${sd*x}" data-y="${y}" data-a="${ang}" data-sd="${sd}" data-k="${k}"><g transform="scale(${gl},${0.75+0.25*g})"><path class="ol" d="${GILL}" fill="${Gc}"/><path d="M4,-4 Q30,-8 54,-2 Q30,3 4,4 Z" fill="#fff" opacity=".22"/><path d="M6,0 Q32,-2 58,0" stroke="${gD}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".55"/></g></g>`}));
   s+=`<path class="ol" d="${HEAD}" fill="${B}"/><ellipse cx="-46" cy="-44" rx="14" ry="7" transform="rotate(-32 -46 -44)" fill="#fff" opacity=".7"/><circle cx="-24" cy="-58" r="4" fill="#fff" opacity=".7"/>`;
   {const r=rng(31+i);for(let k=0;k<16;k++){const x=(r()-0.5)*120,y=-72+r()*34;if((x/88)**2+(y/72)**2>0.9)continue;s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.8+r()*3.2).toFixed(1)}" fill="#fff" opacity=".7"/>`}
@@ -1341,12 +1354,87 @@ function axoSVG(i){
   if(a.spots){const r=rng(i*97+13);const sc=mix(B,OL,0.35);for(let k=0;k<40;k++){const u=r()*Math.PI*2,v=Math.sqrt(r());const x=Math.cos(u)*v*84,y=Math.sin(u)*v*66;
     if(y>-38&&Math.abs(x)<74)continue;s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(2.5+r()*3).toFixed(1)}" fill="${sc}" opacity=".5"/>`}
     for(let k=0;k<8;k++){const x=(r()-0.5)*brx*1.4,y=bcy+(r()-0.5)*bry*1.2;s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(2.5+r()*2.5).toFixed(1)}" fill="${sc}" opacity=".5"/>`}}
+  s+=outfitFace(a);
   s+=`<g class="face"></g>`;
-  const acc=ACC.find(x=>x.id===a.acc);if(acc&&acc.id!=='nenhum'&&unlocked(acc))s+=`<g transform="${acc.pos}">${acc.draw(a.accColor)}</g>`;
+  const acc=ACC.find(x=>x.id===a.acc);if(oOn(a,'santa'))s+=outfitHat(a);else if(acc&&acc.id!=='nenhum'&&unlocked(acc))s+=`<g transform="${acc.pos}">${acc.draw(a.accColor)}</g>`;
   const hd=HAND.find(x=>x.id===a.hand);if(hd&&unlocked(hd))s+=hd.draw(B,bcy);
   if(st===4)s+=`<g class="spark">`+[[-110,-70],[112,-60],[-120,30],[120,40],[0,-118]].map(([x,y],k)=>`<g transform="translate(${x},${y})"><path d="${SPARK}" fill="#ffe27a" stroke="${OL}" stroke-width="2.5" class="glow" style="animation-delay:${k*0.3}s"/></g>`).join('')+`</g>`;
   return s+`</g>`;
 }
+
+
+// ======================================================================
+// ---------- Sazonal: Halloween (outubro) e Natal (novembro) ----------
+// ======================================================================
+const SEASONS={halloween:{nome:'Halloween',emoji:'🎃',from:[10,1],to:[11,2],quando:'em outubro'},natal:{nome:'Natal',emoji:'🎄',from:[11,1],to:[1,6],quando:'em novembro'}};
+function inSeason(g,d){d=d||new Date();const S=SEASONS[g],v=(d.getMonth()+1)*100+d.getDate(),f=S.from[0]*100+S.from[1],t=S.to[0]*100+S.to[1];return f<=t?(v>=f&&v<=t):(v>=f||v<=t)}
+function seasonOwned(g){return inSeason(g)||!!(state.seasonal&&state.seasonal[g])}
+function collectSeason(){if(!state.seasonal||typeof state.seasonal!=='object')state.seasonal={};const got=[];
+  Object.keys(SEASONS).forEach(g=>{if(inSeason(g)&&!state.seasonal[g]){state.seasonal[g]=true;got.push(g)}});if(got.length)save();return got}
+// --- Halloween: acessórios dos axolotls ---
+ACC.push({id:'bruxa',nome:'Chapéu de bruxa',season:'halloween',at:0,pv:'-54 -90 108 104',pos:'translate(-6,-66) rotate(-9)',
+  draw:c=>`<ellipse class="ol" cx="0" cy="0" rx="46" ry="10" fill="#3b2a5c"/>`+`<path class="ol" d="M-27,-2 C-23,-26 -14,-48 -2,-68 Q8,-86 26,-76 Q10,-70 12,-54 C20,-34 26,-18 27,-2 Z" fill="#3b2a5c"/>`
+    +`<path class="ols" d="M-26,-8 Q0,0 26,-8 L25,-20 Q0,-12 -25,-20 Z" fill="${c||'#ff9f43'}"/><rect class="ols" x="-7" y="-21" width="14" height="14" rx="3" fill="#ffd45a"/><rect x="-3" y="-17" width="6" height="6" rx="1.5" fill="#3b2a5c"/>`});
+TALL.bruxa=1;
+HAND.push({id:'abobora',nome:'Balde de abóbora',season:'halloween',at:0,hand:1,pv:'-46 14 92 100',
+  draw:(c,y)=>`<g transform="translate(0,${y+8})"><path d="M-26,-24 Q0,-64 26,-24" fill="none" stroke="${OL}" stroke-width="9" stroke-linecap="round"/><path d="M-26,-24 Q0,-64 26,-24" fill="none" stroke="#7a4a2a" stroke-width="4" stroke-linecap="round"/>`
+    +`<path class="ol" d="M-30,-10 Q-34,-34 0,-34 Q34,-34 30,-10 Q34,18 0,24 Q-34,18 -30,-10 Z" fill="#ff9f43"/><path d="M-10,-32 C-18,-16 -18,8 -8,22 M10,-32 C18,-16 18,8 8,22" stroke="#d9741b" stroke-width="2.5" fill="none" stroke-linecap="round"/>`
+    +`<path class="glow" d="M-16,-14 l9,-4 -2,10 z M16,-14 l-9,-4 2,10 z" fill="#ffe27a"/><path class="glow" d="M-14,2 l4,4 5,-4 5,4 5,-4 5,4 4,-4 l-3,8 q-11,6 -22,0 z" fill="#ffe27a"/>`
+    +`<ellipse class="ol" cx="-31" cy="4" rx="10" ry="8" fill="${c}"/><ellipse class="ol" cx="31" cy="4" rx="10" ry="8" fill="${c}"/></g>`});
+// --- Roupa: asas de morcego (Halloween) e fato de Pai Natal ---
+const batWingPair=()=>[-1,1].map(sd=>`<g transform="scale(${sd},1)"><path class="ol" d="M-22,6 C-40,-18 -78,-34 -122,-28 C-108,-14 -108,-4 -96,6 C-92,16 -84,22 -72,26 C-68,36 -58,40 -46,44 C-40,34 -34,22 -22,16 Z" fill="#4a3b6b"/><path d="M-24,8 L-120,-27 M-24,10 L-96,6 M-24,12 L-72,26" stroke="#7a68a8" stroke-width="2.5" fill="none" stroke-linecap="round"/></g>`).join('');
+const santaHat=()=>`<g transform="translate(-4,-66) rotate(-8)"><path class="ol" d="M-38,-2 C-34,-34 -8,-62 24,-66 Q52,-60 48,-34 Q46,-16 42,-2 Z" fill="#d6384a"/><rect class="ol" x="-46" y="-10" width="92" height="17" rx="8.5" fill="#fff"/><circle class="ol" cx="50" cy="-40" r="10" fill="#fff"/></g>`;
+const santaBeard=()=>`<path class="ol" d="M-50,26 Q-58,80 0,90 Q58,80 50,26 Q30,52 0,50 Q-30,52 -50,26 Z" fill="#fff"/><path d="M-30,64 q6,8 12,0 M-6,74 q6,8 12,0 M18,64 q6,8 12,0" stroke="#d5d0e6" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+function santaJacket(bcy,rx,ry){return `<ellipse class="ol" cx="0" cy="${bcy}" rx="${rx}" ry="${ry}" fill="#d6384a"/>`
+  +`<rect x="-5" y="${bcy-ry*.55}" width="10" height="${ry*1.25}" rx="4" fill="#fff"/><circle cx="0" cy="${bcy-ry*.3}" r="3" fill="#2f2a3a"/><circle cx="0" cy="${bcy+ry*.62}" r="3" fill="#2f2a3a"/>`
+  +`<path class="ols" d="M${-rx*.82},${bcy+ry*.52} Q0,${bcy+ry*1.2} ${rx*.82},${bcy+ry*.52} Q0,${bcy+ry*.88} ${-rx*.82},${bcy+ry*.52} Z" fill="#fff"/>`
+  +`<rect x="${-rx*.97}" y="${bcy+ry*.02}" width="${rx*1.94}" height="11" rx="5" fill="#2f2a3a"/><rect class="ols" x="-9" y="${bcy-1}" width="18" height="15" rx="3" fill="#ffd45a"/><rect x="-4" y="${bcy+3}" width="8" height="7" rx="2" fill="#2f2a3a"/>`}
+const OUT=[
+  {id:'asas',nome:'Asas de morcego',season:'halloween',at:0,outfit:1,pv:'-136 -40 272 100',draw:()=>`<g transform="translate(0,6)">${batWingPair()}</g>`},
+  {id:'santa',nome:'Fato de Pai Natal',season:'natal',at:0,outfit:1,pv:'-62 -78 124 168',draw:()=>santaJacket(52,42,36)+santaBeard().replace(/^/,'<g transform="translate(0,-34) scale(.7)">')+'</g>'+`<g transform="scale(.82) translate(0,-4)">${santaHat()}</g>`}
+];
+function oOn(a,id){if(!a||a.outfit!==id)return false;const o=OUT.find(x=>x.id===id);return !!o&&seasonOwned(o.season)}
+function outfitBack(a,bcy,bry){return oOn(a,'asas')?`<g transform="translate(0,${bcy-bry*.55}) scale(1.18)">${batWingPair()}</g>`:''}
+function outfitBody(a,bcy,rx,ry){return oOn(a,'santa')?santaJacket(bcy,rx,ry):''}
+function outfitFace(a){return oOn(a,'santa')?santaBeard():''}
+function outfitHat(a){return oOn(a,'santa')?santaHat():''}
+// --- Decoração sazonal do aquário (vale para todos os aquários) ---
+const pumpkin=()=>`<ellipse cx="0" cy="-22" rx="36" ry="28" fill="#ffd45a" opacity=".22" class="glow"/><ellipse class="ol" cx="0" cy="-22" rx="26" ry="21" fill="#ff9f43"/><path d="M-10,-42 C-18,-30 -18,-14 -10,-3 M10,-42 C18,-30 18,-14 10,-3" stroke="#d9741b" stroke-width="2.5" fill="none" stroke-linecap="round"/><path class="ols" d="M-3,-42 Q0,-54 8,-52 L5,-42 Z" fill="#5aa874"/><path class="glow" d="M-15,-28 l8,-3 -2,9 z M15,-28 l-8,-3 2,9 z" fill="#ffe27a"/><path class="glow" d="M-12,-14 l4,4 4,-3 4,4 4,-4 4,3 4,-4 l-2,7 q-10,6 -22,0 z" fill="#ffe27a"/>`;
+function web(flip){const R=[[96,10],[84,58],[52,96],[8,104]];let d='';R.forEach(([x,y])=>{d+=`M0,0 L${x},${y} `});
+  [.3,.52,.76,.98].forEach(f=>{for(let k=0;k<R.length-1;k++){const [x0,y0]=R[k],[x1,y1]=R[k+1];d+=`M${(x0*f).toFixed(1)},${(y0*f).toFixed(1)} Q${((x0+x1)*f*.46).toFixed(1)},${((y0+y1)*f*.46).toFixed(1)} ${(x1*f).toFixed(1)},${(y1*f).toFixed(1)} `}});
+  return `<g transform="${flip?'translate(400,0) scale(-1,1)':''}"><path d="${d}" fill="none" stroke="#fff" stroke-width="1.8" opacity=".8" stroke-linecap="round"/></g>`}
+const spiderArt=()=>[-1,1].map(sd=>[0,1,2,3].map(k=>`<path d="M0,0 Q${sd*(10+k*3)},${-8+k*6} ${sd*(16+k*3)},${-3+k*9}" fill="none" stroke="${OL}" stroke-width="2" stroke-linecap="round"/>`).join('')).join('')+`<circle class="ols" cx="0" cy="2" r="7" fill="#2f2a3a"/><circle class="ols" cx="0" cy="-6" r="4.5" fill="#2f2a3a"/><circle cx="-1.8" cy="-6.5" r="1.2" fill="#ff6b6b"/><circle cx="1.8" cy="-6.5" r="1.2" fill="#ff6b6b"/>`;
+const ghostArt=()=>`<path class="ol" style="stroke-width:5" d="M-16,10 C-16,-14 -8,-24 0,-24 C8,-24 16,-14 16,10 L16,22 Q12,15 8,22 Q4,15 0,22 Q-4,15 -8,22 Q-12,15 -16,22 Z" fill="#fff" fill-opacity=".9"/><ellipse cx="-5.5" cy="-6" rx="2.6" ry="3.6" fill="${OL}"/><ellipse cx="5.5" cy="-6" rx="2.6" ry="3.6" fill="${OL}"/><ellipse cx="0" cy="4" rx="2.6" ry="3.2" fill="${OL}"/><ellipse cx="-10" cy="1" rx="3" ry="1.8" fill="#ffb3c7" opacity=".7"/><ellipse cx="10" cy="1" rx="3" ry="1.8" fill="#ffb3c7" opacity=".7"/>`;
+const bauble=c=>`<rect class="ols" x="-3" y="-14" width="6" height="6" rx="1.5" fill="#ffd45a"/><circle class="ols" r="9.5" fill="${c}"/><path d="M-8,-1 Q0,5 8,-1" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/><ellipse cx="-3.5" cy="-4" rx="2.6" ry="1.7" fill="#fff" opacity=".75"/>`;
+const gift=(w,h,c,r)=>`<rect class="ol" x="${-w/2}" y="${-h}" width="${w}" height="${h}" rx="3" fill="${c}"/><rect x="${-w*.09}" y="${-h}" width="${w*.18}" height="${h}" fill="${r}"/><rect x="${-w/2}" y="${-h*.6}" width="${w}" height="${h*.16}" fill="${r}"/><path class="ols" d="M0,${-h} C-14,${-h-14} -20,${-h-2} -4,${-h-2} M0,${-h} C14,${-h-14} 20,${-h-2} 4,${-h-2}" fill="${r}"/><circle class="ols" cx="0" cy="${-h-2}" r="3.5" fill="${r}"/>`;
+function xmasTree(){let s=`<rect class="ol" x="-9" y="-6" width="18" height="16" rx="3" fill="#8f5a36"/>`;
+  [[0,-132,-86,38],[0,-98,-50,48],[0,-62,-14,58]].forEach(([x,top,mid,w])=>{s+=`<path class="ol" d="M0,${top} L${w},${top+Math.abs(mid-top)+18} L${w*.55},${top+Math.abs(mid-top)+18} L${w*.8},${top+Math.abs(mid-top)+46} L${-w*.8},${top+Math.abs(mid-top)+46} L${-w*.55},${top+Math.abs(mid-top)+18} L${-w},${top+Math.abs(mid-top)+18} Z" fill="#3f9a5a"/>`});
+  s+=[[-20,-20,'#ff6b6b'],[18,-26,'#ffd45a'],[-8,-52,'#8fd3f4'],[22,-60,'#ff6b6b'],[-22,-76,'#ffd45a'],[8,-92,'#c792ea'],[0,-112,'#ff6b6b']].map(([x,y,c])=>`<circle class="ols" cx="${x}" cy="${y}" r="5" fill="${c}"/>`).join('');
+  s+=[[-30,-30],[30,-40],[-14,-66],[14,-80],[-4,-102]].map(([x,y],k)=>glowDot(x,y,2.4,'#fff3a0',(k*.4).toFixed(1))).join('');
+  s+=T('translate(0,-138)',`<path class="ols glow" d="${star(15,6.5,5)}" fill="#ffd45a"/>`);return s}
+function xmasLights(){const cols=['#ff6b6b','#ffd45a','#8fd3f4','#b9f2c9','#ff9fcf'];const q=(a,b,c,t)=>[(1-t)*(1-t)*a[0]+2*(1-t)*t*b[0]+t*t*c[0],(1-t)*(1-t)*a[1]+2*(1-t)*t*b[1]+t*t*c[1]];
+  let s=`<path d="M-10,8 Q100,58 200,28 Q300,58 410,8" fill="none" stroke="${OL}" stroke-width="2.6"/>`,n=0;
+  [[[-10,8],[100,58],[200,28]],[[200,28],[300,58],[410,8]]].forEach(sg=>[.1,.28,.46,.64,.82,.98].forEach(t=>{const [x,y]=q(sg[0],sg[1],sg[2],t);{const bx=x.toFixed(1),by=(y+8).toFixed(1),c=cols[n%5];s+=`<circle cx="${bx}" cy="${by}" r="11" fill="${c}" opacity=".4" class="glow" style="animation-delay:${(n*.31%1.8).toFixed(2)}s"/><rect class="ols" x="${(x-2.5).toFixed(1)}" y="${(y-1).toFixed(1)}" width="5" height="5" rx="1" fill="#8a8fa8"/><ellipse class="ols" cx="${bx}" cy="${(y+9).toFixed(1)}" rx="4.6" ry="6" fill="${c}"/>`}n++}));return s}
+const SEASON_DECOR=[
+  {id:'abobouras',season:'halloween',nome:'Abóboras',layer:'back',pv:'-40 -64 80 70',icon:()=>pumpkin(),
+    build:()=>[{layer:'back',svg:T('translate(44,414)',pumpkin())+T('translate(356,418) scale(1.1)',pumpkin())+T('translate(304,432) scale(.62)',pumpkin())}]},
+  {id:'teias',season:'halloween',nome:'Teias e aranha',layer:'top',pv:'-6 -6 130 120',icon:()=>web(false)+`<g transform="translate(96,70)">${spiderArt()}</g><path d="M96,0 V62" stroke="${OL}" stroke-width="2"/>`,
+    build:()=>[{layer:'top',svg:web(false)+web(true)},{layer:'top',svg:`<path d="M0,0 V60" stroke="#fff" stroke-width="2" opacity=".85"/>`,anim:t=>`translate(330,0) scale(1,${((60+Math.sin(t*1.1)*18)/60).toFixed(3)})`},{layer:'top',svg:spiderArt(),anim:t=>`translate(330,${(66+Math.sin(t*1.1)*18).toFixed(1)})`}]},
+  {id:'fantasmas',season:'halloween',nome:'Fantasminhas',layer:'back',pv:'-24 -30 48 58',icon:()=>ghostArt(),
+    build:()=>[[70,196,1,0],[330,170,.9,2],[205,150,.7,4]].map(([x0,y0,k,ph])=>({layer:'back',svg:ghostArt(),anim:t=>`translate(${(x0+Math.sin(t*.35+ph)*28).toFixed(1)},${(y0+Math.sin(t*.9+ph)*9).toFixed(1)}) scale(${k})`}))},
+  {id:'neve',season:'natal',nome:'Neve a cair',layer:'top',pv:'0 0 80 70',icon:()=>[[16,14,3],[44,10,2.4],[62,30,3.2],[28,38,2.6],[50,52,2.2],[14,58,3]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="#b9c9e8" stroke-width="1"/>`).join(''),
+    build:()=>{const r=rng(77),o=[];for(let i=0;i<34;i++){const x0=r()*400,y0=r()*480,v=14+r()*26,ph=r()*6,rad=1.6+r()*2.6,fl=r()>.7;
+      o.push({layer:'top',svg:fl?`<path d="${star(rad*2.3,rad*.8,6)}" fill="#fff" opacity=".92"/>`:`<circle r="${rad.toFixed(1)}" fill="#fff" opacity="${(.6+r()*.4).toFixed(2)}"/>`,anim:t=>`translate(${(x0+Math.sin(t*.5+ph)*14).toFixed(1)},${(((y0+t*v)%480)-20).toFixed(1)})`})}return o}},
+  {id:'luzes',season:'natal',nome:'Luzinhas de Natal',layer:'top',pv:'-6 0 412 60',icon:()=>xmasLights(),build:()=>[{layer:'top',svg:xmasLights()}]},
+  {id:'arvore',season:'natal',nome:'Árvore de Natal',layer:'back',pv:'-60 -156 120 172',icon:()=>xmasTree(),build:()=>[{layer:'back',svg:T('translate(340,408) scale(.92)',xmasTree())}]},
+  {id:'presentes',season:'natal',nome:'Presentes',layer:'back',pv:'-50 -70 100 76',icon:()=>T('translate(-22,0)',gift(34,26,'#e4578c','#ffd45a'))+T('translate(18,0)',gift(30,34,'#5f9fe0','#fff'))+T('translate(-2,-26) scale(.8)',gift(24,20,'#4aa561','#ff9fbe')),
+    build:()=>[{layer:'back',svg:T('translate(64,416)',gift(38,28,'#e4578c','#ffd45a')+T('translate(34,0)',gift(30,36,'#5f9fe0','#fff'))+T('translate(-2,-28) scale(.8)',gift(26,20,'#4aa561','#ff9fbe')))}]},
+  {id:'bolas',season:'natal',nome:'Bolas de Natal a flutuar',layer:'back',pv:'-20 -20 100 80',icon:()=>T('translate(10,14)',bauble('#e4578c'))+T('translate(44,36)',bauble('#5f9fe0'))+T('translate(18,52)',bauble('#ffd45a')),
+    build:()=>['#e4578c','#5f9fe0','#ffd45a','#4aa561','#c792ea','#ff9f43','#e4578c'].map((c,i)=>{const x0=40+i*52,v=10+(i%3)*5,y0=i*70,ph=i*1.3;return {layer:'back',svg:bauble(c),anim:t=>`translate(${(x0+Math.sin(t*.6+ph)*10).toFixed(1)},${(470-((t*v+y0)%520)).toFixed(1)})`}})}
+];
+function decorVisible(d){if(!seasonOwned(d.season))return false;const h=state.homeUI,pr=h&&h.sPref?h.sPref[d.id]:undefined;return pr===undefined?inSeason(d.season):!!pr}
+function renderSeason(){const Bk=$('sBack'),Tp=$('sTop');if(!Bk||!Tp)return;Bk.innerHTML='';Tp.innerHTML='';
+  SEASON_DECOR.forEach(d=>{if(!decorVisible(d))return;d.build().forEach(it=>{const g=document.createElementNS(NS,'g');g.innerHTML=it.svg;(it.layer==='top'?Tp:Bk).appendChild(g);if(it.anim)stickEls.push({g,st:{anim:it.anim}})})})}
 
 // ---------- Estado ----------
 const KEY='savealotl-v1';
@@ -1389,7 +1477,7 @@ function stageP(p){let k=0;STAGES.forEach((st,i)=>{if(p>=st.min)k=i});return k}
 function setAqTheme(id){if(CTX==='home')state.fin.homeTheme=id;else curSav().theme=id}
 const curStage=()=>stageP(aq().p);
 const grand=()=>state.savings.reduce((a,s)=>a+savedOf(s),0);
-const unlocked=it=>grand()>=it.at;
+const unlocked=it=>it.season?seasonOwned(it.season):grand()>=it.at;
 const curTheme=()=>TH.find(t=>t.id===aq().theme)||TH[0];
 const partOn=(a,th,k)=>a.p>=th.parts[k].at&&!a.off[th.id+':'+k];
 const stickOn=(a,st)=>a.p>=st.at&&!a.off['x:'+st.id];
@@ -1417,8 +1505,8 @@ scene.innerHTML=`<defs>
 <g id="roomBack"></g>
 <g id="world"><rect width="400" height="440" fill="url(#water)"/><g id="bgArt"></g>${ambient()}
   <g id="hearts"></g><g id="lTop"></g><g id="lBack"></g><g id="weeds"></g><g id="stickBack"></g><g id="fish"></g>
-  <g id="groundG"></g><g id="lOver"></g><g id="lFront"></g><g id="stickFront"></g>
-  <g id="bubbles"></g><g id="axoLayer"></g><g id="stickTop"></g><g id="fx"></g><g id="tags"></g></g>
+  <g id="groundG"></g><g id="lOver"></g><g id="lFront"></g><g id="sBack"></g><g id="stickFront"></g>
+  <g id="bubbles"></g><g id="axoLayer"></g><g id="stickTop"></g><g id="sTop"></g><g id="fx"></g><g id="tags"></g></g>
 <g id="roomFront"></g>`;
 const hearts=[];
 [[70,100,1.1],[338,150,.9],[36,320,.7],[372,330,.6]].forEach(([x,y,s],i)=>{const g=document.createElementNS(NS,'g');g.innerHTML=P(HEART,'#ff9fbe');$('hearts').appendChild(g);hearts.push({g,x,y,s,ph:i*1.7})});
@@ -1450,7 +1538,7 @@ function renderScene(){
   $('lTop').innerHTML=L.top;$('lBack').innerHTML=L.back;$('lFront').innerHTML=L.front;
   $('groundG').innerHTML=groundSVG(th);$('lOver').innerHTML=th.over?th.over():'';
   $('roomFront').innerHTML=th.bowl?th.roomFront()+L.room:'';
-  renderWeeds(th);renderStickers();
+  renderWeeds(th);renderStickers();renderSeason();
   scene.setAttribute('aria-label','Aquário '+th.nome+': '+(sv.name||''));
 }
 
@@ -1538,7 +1626,7 @@ function frame(now){
     an.blinkT-=dt;if(an.blinkT<0){an.blink=.13;an.blinkT=2.5+Math.random()*3}
     if(an.blink>0)an.blink-=dt;
     if(r.eyes)r.eyes.setAttribute('transform',`translate(0,-2) scale(1,${an.blink>0?.12:1}) translate(0,2)`);
-    const tg=$('tag'+i);if(tg){const acc=a.acc;const top=(TALL[acc]&&unlocked(ACC.find(x=>x.id===acc)))?172:108;
+    const tg=$('tag'+i);if(tg){const acc=a.acc;const top=((TALL[acc]&&unlocked(ACC.find(x=>x.id===acc)))||oOn(a,'santa'))?172:108;
       tg.setAttribute('transform',`translate(${px},${(hy+(y-top)*sc-6).toFixed(2)}) scale(${Math.min(1,lay(i).f+.12).toFixed(2)})`)}
   });
   weeds.forEach(w=>w.g.setAttribute('transform',`translate(${w.x},${w.y}) scale(${w.s}) rotate(${(Math.sin(t*.9+w.ph)*3*calm).toFixed(2)})`));
@@ -1601,10 +1689,14 @@ function heading(txt){const h=document.createElement('p');h.className='subh';h.t
 function renderItems(){
   items.innerHTML='';const a=cur(),sv=aq(),th=curTheme(),p=sv.p;const ctxTxt=CTX==='home'?' do aquário do mês.':' desta poupança.';
   if(state.tab==='acc'){
-    [...ACC,...HAND].forEach(it=>{const lock=!unlocked(it);const on=it.hand?a.hand===it.id:a.acc===it.id;
-      card(it.nome,it.hand?it.draw(a.body,78):it.draw(it.id==='nenhum'?'':(a.accColor||'#ffb3c7')),lock?'Aos '+fmt(it.at):on?(it.hand?'A segurar':'A usar'):(it.hand?'Segurar':'Usar'),lock,on,()=>{
-        if(lock){toast(it.nome+' desbloqueia quando pouparem '+fmt(it.at)+' no total.');return}
-        if(it.hand)a.hand=on?'':it.id;else a.acc=it.id;changed()},it.pv)});
+    const all=[...ACC,...HAND,...OUT];
+    const mk=it=>{const lock=!unlocked(it);const on=it.hand?a.hand===it.id:it.outfit?a.outfit===it.id:a.acc===it.id;
+      const sub=lock?(it.season?'Chega '+SEASONS[it.season].quando:'Aos '+fmt(it.at)):on?(it.hand?'A segurar':it.outfit?'A vestir':'A usar'):(it.hand?'Segurar':it.outfit?'Vestir':'Usar');
+      card(it.nome,it.hand?it.draw(a.body,78):it.draw(it.id==='nenhum'?'':(a.accColor||'#ffb3c7')),sub,lock,on,()=>{
+        if(lock){toast(it.season?it.nome+' desbloqueia automaticamente '+SEASONS[it.season].quando+'.':it.nome+' desbloqueia quando pouparem '+fmt(it.at)+' no total.');return}
+        if(it.hand)a.hand=on?'':it.id;else if(it.outfit)a.outfit=on?'':it.id;else a.acc=it.id;changed()},it.pv)};
+    all.filter(x=>!x.season).forEach(mk);
+    heading('🎃 Halloween e 🎄 Natal');all.filter(x=>x.season).forEach(mk);
   }else{
     heading('Deste tema: '+th.nome);
     th.parts.forEach((pt,k)=>{const lock=p<pt.at,key=th.id+':'+k,on=!sv.off[key];
@@ -1616,6 +1708,11 @@ function renderItems(){
       card(st.nome,st.draw(),lock?'Aos '+pctTxt(st.at):on?'No aquário':'Escondido',lock,on,()=>{
         if(lock){toast(st.nome+' aparece aos '+pctTxt(st.at)+ctxTxt);return}
         if(on)sv.off[key]=true;else delete sv.off[key];save();renderScene();renderItems()})});
+    heading('🎃 Halloween e 🎄 Natal (todos os aquários)');
+    SEASON_DECOR.forEach(d=>{const own=seasonOwned(d.season),vis=decorVisible(d);
+      card(d.nome,d.icon(),!own?'Chega '+SEASONS[d.season].quando:vis?'No aquário':'Escondido',!own,vis,()=>{
+        if(!own){toast(d.nome+' desbloqueia automaticamente '+SEASONS[d.season].quando+'.');return}
+        const h=HU();h.sPref[d.id]=!vis;save();renderScene();renderItems()},d.pv,th.water[1])});
   }
 }
 function nextInAquarium(sv,th){return [...th.parts,...STICKERS].filter(x=>x.at>progress(sv)).sort((x,y)=>x.at-y.at)[0]}
@@ -1670,7 +1767,7 @@ function renderPanel(){
   const del=$('delSav');del.hidden=!multi;del.classList.toggle('confirm',askDel);del.textContent=askDel?'Tens a certeza? Toca outra vez':'Remover esta poupança';
   [...$('themes').children].forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.id===curTheme().id)));
   $('together').textContent=fmt(grand())+' no total';
-  if(state.tab==='acc'){const nxa=[...ACC,...HAND].filter(x=>!unlocked(x)).sort((x,y)=>x.at-y.at)[0];
+  if(state.tab==='acc'){const nxa=[...ACC,...HAND].filter(x=>!x.season&&!unlocked(x)).sort((x,y)=>x.at-y.at)[0];
     $('nextUnlock').textContent=nxa?'Próximo acessório: '+nxa.nome.toLowerCase()+' aos '+fmt(nxa.at)+' poupados no total.':'Todos os acessórios desbloqueados.'}
   else $('nextUnlock').textContent=CTX==='home'?'Os elementos do aquário do mês aparecem quando guardam o plano e pagam as contas. Toca para esconder ou mostrar.':'Os elementos do aquário aparecem à medida que esta poupança cresce. Toca para esconder ou mostrar.';
   [...$('tabs').children].forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===state.tab)));
@@ -1766,16 +1863,22 @@ function addItem(){
 }
 $('ckAddBtn').addEventListener('click',addItem);
 [$('ckName'),$('ckAmt')].forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addItem()}}));
+const logOpen={};
 function renderLog(sv){
-  const ul=$('log');ul.innerHTML='';const n=sv.log.length;const last=sv.log.slice(-5).reverse();$('logWrap').hidden=!last.length;
+  const ul=$('log'),wrap=$('logWrap');ul.innerHTML='';const n=sv.log.length;wrap.hidden=!n;
+  const old=$('logMore');if(old)old.remove();
+  const open=!!logOpen[sv.id],all=sv.log.slice().reverse(),shown=open?all:all.slice(0,1);
+  wrap.querySelector('.flabel').textContent=open&&n>1?'Últimos movimentos':'Último movimento';
   const df=new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  last.forEach((m,k)=>{const idx=n-1-k;const a=state.axos.find(x=>x.id===m.a);const li=document.createElement('li');if(m.v<0)li.className='neg';
+  shown.forEach((m,k)=>{const idx=n-1-k;const a=state.axos.find(x=>x.id===m.a);const li=document.createElement('li');if(m.v<0)li.className='neg';
     li.innerHTML='<i></i><span></span><b></b><small></small><button type="button" class="undo">Anular</button>';li.querySelector('i').style.background=a?a.body:'#ccc';
     li.querySelector('span').textContent=a?(a.name||'Sem nome'):'Alguém';li.querySelector('b').textContent=(m.v<0?'−':'+')+fmt(Math.abs(m.v));li.querySelector('small').textContent=df.format(new Date(m.t));
     const u=li.querySelector('.undo');u.setAttribute('aria-label','Anular este movimento');
     u.addEventListener('click',()=>{const bs=stageOf(sv);sv.by[m.a]=Math.max(0,Math.round(((sv.by[m.a]||0)-m.v)*100)/100);sv.log.splice(idx,1);save();
       if(stageOf(sv)!==bs)rebuildAll();renderScene();renderPanel();toast('Movimento anulado.')});
     ul.appendChild(li)});
+  if(n>1){const bt=document.createElement('button');bt.type='button';bt.id='logMore';bt.className='hmore';bt.textContent=open?'Fechar ▴':'Ver todos ('+n+') ▾';bt.setAttribute('aria-expanded',String(open));
+    bt.addEventListener('click',()=>{logOpen[sv.id]=!open;renderLog(sv)});wrap.appendChild(bt)}
 }
 function renderDeadline(sv){
   const D=dlInfo(sv),out=$('dlOut');out.innerHTML='';
@@ -2616,7 +2719,7 @@ const DEF_ORDER=['aq','sum','spend','bills','inc'];
 const TAB_LIST=[['dia','🛒','Dia-a-dia'],['poupancas','🐠','Poupanças'],['simular','🧮','Simular'],['aprender','💡','Aprender']];
 function HU(){if(!state.homeUI||typeof state.homeUI!=='object')state.homeUI={};const h=state.homeUI;
   if(!Array.isArray(h.order))h.order=DEF_ORDER.slice();h.order=h.order.filter(id=>DEF_ORDER.includes(id));DEF_ORDER.forEach(id=>{if(!h.order.includes(id))h.order.push(id)});
-  h.o=h.o||{};h.off=h.off||{};h.col=h.col||{};h.colS=h.colS||{};h.names=h.names||{};h.tabs=h.tabs||{};return h}
+  h.o=h.o||{};h.off=h.off||{};h.col=h.col||{};h.colS=h.colS||{};h.sPref=h.sPref||{};h.names=h.names||{};h.tabs=h.tabs||{};return h}
 function setupSections(){
   SECS.forEach(([id,def,coll])=>{
     const sec=document.querySelector('#v-inicio [data-sec="'+id+'"]');if(!sec||sec.dataset.ready||!coll)return;sec.dataset.ready='1';
@@ -2969,6 +3072,39 @@ function loadDemo(){
 }
 $('demoBar').hidden=!state.demo;
 $('demoStart').addEventListener('click',()=>{if(!confirm('Apagar os dados de exemplo e começar a sério?'))return;try{localStorage.removeItem(KEY);localStorage.removeItem('sav-base')}catch(e){}location.reload()});
+
+// ---------- Rever as boas-vindas (alterar a configuração sem perder registos) ----------
+const WE={payInit:'mes'};
+$('wPay').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;[...$('wPay').children].forEach(x=>x.setAttribute('aria-selected',String(x===b)))});
+function openWelcomeEdit(){
+  closeHomeSheet();
+  const w=$('welcome');w.classList.add('wedit');
+  $('wTitle').textContent='Ajustar a tua configuração';
+  w.querySelector('.wIntro').textContent='Muda o que quiseres. Os teus registos não se perdem.';
+  const box=$('wNames');box.innerHTML='';
+  state.axos.forEach((a,i)=>{const inp=document.createElement('input');inp.type='text';inp.maxLength=16;inp.className='wName';inp.value=a.name||'';inp.dataset.id=a.id;inp.setAttribute('aria-label','Nome da pessoa '+(i+1));inp.style.borderColor=a.gills||'';box.appendChild(inp)});
+  $('wNamesLabel').textContent=state.axos.length===1?'O teu nome':'Nomes';
+  $('wBiz').checked=bizOn();
+  const o=(HU().o&&HU().o.inc)||{};const cur=(o.p_dia===false&&o.p_semana===false)?'mes':(o.p_dia===false?'semana':'dia');WE.payInit=cur;
+  [...$('wPay').children].forEach(b=>b.setAttribute('aria-selected',String(b.dataset.p===cur)));
+  w.hidden=false;w.scrollTop=0;document.body.classList.add('noscroll');
+}
+function closeWelcomeEdit(){const w=$('welcome');w.hidden=true;w.classList.remove('wedit');document.body.classList.remove('noscroll');
+  $('wTitle').textContent='Olá! Bem-vindo(a) ao Savealotl';w.querySelector('.wIntro').textContent='Aqui cada poupança tem o seu aquário. Os axolotls nascem bebés e crescem à medida que vais guardando dinheiro.'}
+$('homeWelcome').addEventListener('click',openWelcomeEdit);
+$('wCancel').addEventListener('click',closeWelcomeEdit);
+$('wSave').addEventListener('click',()=>{
+  document.querySelectorAll('#wNames input').forEach(inp=>{const a=state.axos.find(x=>x.id===inp.dataset.id),v=inp.value.trim();if(a&&v)a.name=v});
+  const h=HU();h.biz=$('wBiz').checked;
+  const pb=document.querySelector('#wPay [aria-selected="true"]'),pm=pb?pb.dataset.p:'mes';
+  h.o.inc=h.o.inc||{};delete h.o.inc.p_dia;delete h.o.inc.p_semana;
+  if(pm==='mes'){h.o.inc.p_dia=false;h.o.inc.p_semana=false}else if(pm==='semana'){h.o.inc.p_dia=false}
+  F.period=pm;if(pm!==WE.payInit){h.colS.inc=(pm==='mes');h.col.inc=(pm==='mes')}
+  save();closeWelcomeEdit();applyOpts();applyBiz();applyHome();refreshAll();toast('Configuração atualizada. Os teus registos ficaram como estavam.');
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('welcome').classList.contains('wedit')&&!$('welcome').hidden)closeWelcomeEdit()});
+{const got=collectSeason();if(got.length&&state.onboarded!==false)setTimeout(()=>toast(got.includes('halloween')?'🎃 Chegou o Halloween! Desbloqueaste acessórios para os axolotls e decorações para o aquário. Vê em ✎ → Coleção.':'🎄 Chegou o Natal! Desbloqueaste o fato de Pai Natal e 5 efeitos para o aquário. Vê em ✎ → Coleção.'),3200)}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const got=collectSeason();if(got.length){try{renderScene();rebuildAll(true)}catch(e){}toast(got.includes('halloween')?'🎃 Chegou o Halloween! Há novidades na Coleção.':'🎄 Chegou o Natal! Há novidades na Coleção.')}}});
 applyLearnOrder();
 showView(state.view);
 
