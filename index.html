@@ -686,6 +686,8 @@ input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip
 .repBig{font-size:3.4rem;line-height:1}
 #repSend:disabled{opacity:.6;cursor:default}
 .toggle .sw{flex:none}
+.wRemNote{margin:4px 0 0}
+.wRemNote[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -972,6 +974,11 @@ input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip
         <p class="note">Se também controlas despesas de um negócio, liga esta opção para ter a categoria Negócio e um grupo à parte nas despesas fixas. Desligada, fica tudo escondido.</p>
         <label class="toggle"><input type="checkbox" id="setBiz"><span class="sw"></span><span>Mostrar a opção Negócio</span></label>
       </section>
+      <section class="setBlock"><h3 class="h3">🔔 Lembretes</h3>
+        <p class="note">Um aviso suave no telemóvel se passarem mais de 3 dias sem abrires a app. Funciona melhor com a app instalada no Chrome do Android.</p>
+        <label class="toggle"><input type="checkbox" id="setRem"><span class="sw"></span><span>Lembrar-me de registar</span></label>
+        <p class="note" id="setRemNote" hidden></p>
+      </section>
       <section class="setBlock"><h3 class="h3">🛟 Reportar um problema</h3>
         <p class="note">Encontraste algo que não funciona ou tens uma sugestão? Escreve-nos e respondemos por email.</p>
         <div class="setBtns"><button type="button" class="ghostBtn" id="reportOpen">Reportar um problema</button></div>
@@ -1075,6 +1082,8 @@ input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip
     <div class="pair"><input type="text" id="wDream" maxlength="60" placeholder="Fundo de emergência" aria-label="Nome do primeiro sonho"><input type="number" id="wGoal" min="1" step="any" inputmode="decimal" placeholder="1000 €" aria-label="Valor do objetivo"></div>
     </div>
     <label class="toggle wBizRow"><input type="checkbox" id="wBiz"><span class="sw"></span><span>Também vou controlar despesas de um negócio</span></label>
+    <label class="toggle wBizRow"><input type="checkbox" id="wRemind"><span class="sw"></span><span>Lembretes: avisar-me se passarem mais de 3 dias sem registar</span></label>
+    <p class="note wRemNote" id="wRemindNote" hidden></p>
     <button type="button" class="cta" id="wGo">Começar 🦎</button>
     <p class="note" style="margin:10px 0 0;text-align:center">🔒 Os teus dados ficam no teu telemóvel e, se quiseres, no teu Google Drive. Sem anúncios e sem ligação ao banco.</p>
     <button type="button" class="ghostBtn wJoin" id="wJoin">Já usamos a Savealotl noutro telemóvel: ligar ao Google Drive</button>
@@ -3127,7 +3136,7 @@ function openWelcomeEdit(){
   const box=$('wNames');box.innerHTML='';
   state.axos.forEach((a,i)=>{const inp=document.createElement('input');inp.type='text';inp.maxLength=16;inp.className='wName';inp.value=a.name||'';inp.dataset.id=a.id;inp.setAttribute('aria-label','Nome da pessoa '+(i+1));inp.style.borderColor=a.gills||'';box.appendChild(inp)});
   $('wNamesLabel').textContent=state.axos.length===1?'O teu nome':'Nomes';
-  $('wBiz').checked=bizOn();
+  $('wBiz').checked=bizOn();remRefresh();remNote($('wRemindNote'),'');
   const o=(HU().o&&HU().o.inc)||{};const cur=(o.p_dia===false&&o.p_semana===false)?'mes':(o.p_dia===false?'semana':'dia');WE.payInit=cur;
   [...$('wPay').children].forEach(b=>b.setAttribute('aria-selected',String(b.dataset.p===cur)));
   w.hidden=false;w.scrollTop=0;document.body.classList.add('noscroll');
@@ -3152,7 +3161,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ======================================================================
 // ---------- Reportar um problema (Definições): abre o email do telemóvel ----------
 // ======================================================================
-const APP_BUILD='v20 (2026-10-18)';
+const APP_BUILD='v21 (2026-10-18)';
 const REPORT_TO='savealotl.support@gmail.com';
 let repKind='Problema';
 function techInfo(){let sync='desligada';try{sync=SYNC.on?'ligada ('+SYNC.status+')':'desligada'}catch(e){}
@@ -3177,6 +3186,39 @@ $('repSend').addEventListener('click',sendReport);
 $('repMsg').addEventListener('input',e=>{$('repCount').textContent=e.target.value.length+' / 2000'});
 $('repKind').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;repKind=b.dataset.k;[...$('repKind').children].forEach(x=>x.setAttribute('aria-selected',String(x===b)))});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('reportPage').hidden)closeReport()});
+// ======================================================================
+// ---------- Lembretes (notificações no telemóvel) ----------
+// ======================================================================
+function remOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('sav-rem',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function remSet(k,v){const db=await remOpen();return new Promise((res,rej)=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=()=>{db.close();res()};tx.onerror=()=>rej(tx.error)})}
+async function enableReminders(){
+  if(!('Notification' in window)||!('serviceWorker' in navigator)||!window.indexedDB)return {ok:false,why:'unsupported'};
+  let perm=Notification.permission;
+  if(perm==='default')perm=await Notification.requestPermission();
+  if(perm!=='granted')return {ok:false,why:'denied'};
+  let reg;try{reg=await Promise.race([navigator.serviceWorker.ready,new Promise((_,rej)=>setTimeout(()=>rej(new Error('nosw')),4000))])}catch(e){return {ok:false,why:'nosw'}}
+  let periodic=false;try{if('periodicSync' in reg){await reg.periodicSync.register('lembrete',{minInterval:12*3600*1000});periodic=true}}catch(e){}
+  try{await remSet('enabled',true);await remSet('lastOpen',Date.now());await remSet('count',0)}catch(e){return {ok:false,why:'unsupported'}}
+  return {ok:true,periodic};
+}
+async function disableReminders(){try{await remSet('enabled',false)}catch(e){}try{const reg=await navigator.serviceWorker.ready;if('periodicSync' in reg)await reg.periodicSync.unregister('lembrete')}catch(e){}}
+function remNote(el,txt){if(!el)return;el.textContent=txt||'';el.hidden=!txt}
+function remRefresh(){const on=!!HU().rem&&('Notification' in window)&&Notification.permission==='granted';['wRemind','setRem'].forEach(id=>{const e=$(id);if(e)e.checked=on});return on}
+async function remToggle(on,noteEl){
+  remNote(noteEl,'');
+  if(!on){HU().rem=false;save();remRefresh();await disableReminders();return}
+  const r=await enableReminders();
+  if(!r.ok){HU().rem=false;save();remRefresh();
+    remNote(noteEl,r.why==='denied'?'Não deste permissão às notificações. Podes ativar em: Definições do telemóvel → Apps → Savealotl → Notificações.':r.why==='nosw'?'Abre a app a partir do endereço onde está instalada para ativar os lembretes.':'Este navegador não suporta lembretes.');return}
+  HU().rem=true;save();remRefresh();
+  remNote(noteEl,r.periodic?'Lembretes ativados. Avisamos se passarem mais de 3 dias sem abrires a app, assim que o telemóvel deixar.':'Ativado, mas este aparelho pode não entregar os avisos. Instala a app (menu do Chrome → Instalar app) para funcionar melhor.');
+}
+$('wRemind').addEventListener('change',e=>remToggle(e.target.checked,$('wRemindNote')));
+$('setRem').addEventListener('change',e=>remToggle(e.target.checked,$('setRemNote')));
+function remTouch(){if(HU().rem&&window.indexedDB){remSet('lastOpen',Date.now()).then(()=>remSet('count',0)).catch(()=>{})}}
+if(HU().rem&&!remRefresh()){HU().rem=false;save()}
+remTouch();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')remTouch()});
 applyLearnOrder();
 showView(state.view);
 
@@ -3369,7 +3411,7 @@ function renderSyncInfo(){if($('setSheet').hidden)return;
 }
 setInterval(renderSyncInfo,1000);
 // --- folha de definições ---
-function openSet(){$('setBiz').checked=bizOn();$('setSheet').hidden=false;document.body.classList.add('noscroll');askZero=false;$('zeroBtn').textContent='Começar do zero';renderSyncInfo();setTimeout(()=>$('setClose').focus(),60)}
+function openSet(){$('setBiz').checked=bizOn();remRefresh();remNote($('setRemNote'),'');$('setSheet').hidden=false;document.body.classList.add('noscroll');askZero=false;$('zeroBtn').textContent='Começar do zero';renderSyncInfo();setTimeout(()=>$('setClose').focus(),60)}
 function closeSet(){$('setSheet').hidden=true;document.body.classList.remove('noscroll');$('syncBtn').focus()}
 $('setBiz').addEventListener('change',e=>setBiz(e.target.checked));
 $('syncBtn').addEventListener('click',()=>{if(SYNC.status==='login'&&HAS_CID){connectDrive();return}openSet()});
