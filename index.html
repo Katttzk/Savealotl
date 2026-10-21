@@ -688,6 +688,14 @@ input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip
 .toggle .sw{flex:none}
 .wRemNote{margin:4px 0 0}
 .wRemNote[hidden]{display:none}
+
+.tapRow{cursor:pointer;border-radius:14px}
+.tapRow:active{background:var(--chip)}
+.tapRow:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.bchev{font-size:1.5rem;line-height:1;color:var(--muted);flex:none}
+.csUndo{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff4dc;color:#b45309;border:2px solid #f5c26b;border-radius:14px;padding:8px 12px;margin:0 0 10px;font-weight:800;font-size:.88rem}
+.csUndo button{font:800 .85rem Nunito,sans-serif;border:none;border-radius:999px;padding:6px 14px;background:#b45309;color:#fff;cursor:pointer}
+#catBody .hlist{margin-top:4px}
 </style>
 </head>
 <body>
@@ -1012,6 +1020,13 @@ input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip
       <div class="qaRow" id="qaDate"><button type="button" data-d="0">Hoje</button><button type="button" data-d="1">Ontem</button><label class="qaPick"><span>📅</span><input type="date" id="qaDateIn" aria-label="Outra data"></label></div>
     </div>
     <button type="button" class="cta qaSave" id="qaSave">Guardar</button>
+  </div>
+</div>
+<div class="sheet" id="catSheet" hidden>
+  <div class="sheetBack" id="catBack"></div>
+  <div class="sheetBox" role="dialog" aria-modal="true" aria-labelledby="catTitle">
+    <div class="sheetHead"><h2 id="catTitle">Gastos</h2><button type="button" class="sheetClose" id="catClose" aria-label="Fechar">×</button></div>
+    <div class="sheetBody" id="catBody"></div>
   </div>
 </div>
 <div class="sheet" id="homeSheet" hidden>
@@ -2284,7 +2299,9 @@ function renderSpend(){
       q('.ckx').setAttribute('aria-label','Apagar categoria '+c.name);q('.ckx').addEventListener('click',()=>{F.cats=F.cats.filter(x=>x!==c);save();renderSpend()});
     }else{
       const s=catMonth(c),b=+c.budget||0,pace=b?s/(b*Math.max(frac,.1)):0;
-      li.innerHTML=`<span class="em"></span><div class="bmain"><div class="brow"><b></b><span></span></div>${b?`<div class="mini"><span></span></div>`:''}</div>`;
+      li.innerHTML=`<span class="em"></span><div class="bmain"><div class="brow"><b></b><span></span></div>${b?`<div class="mini"><span></span></div>`:''}</div><span class="bchev" aria-hidden="true">›</span>`;
+      li.classList.add('tapRow');li.setAttribute('role','button');li.tabIndex=0;li.setAttribute('aria-label','Ver os gastos de '+c.name);
+      li.addEventListener('click',()=>openCatList(c.id));li.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();openCatList(c.id)}});
       li.querySelector('.em').textContent=c.emoji||'✨';li.querySelector('b').textContent=c.name;li.querySelector('.brow span').textContent=b?fmt(s)+' de '+fmt(b):fmt(s);
       if(b){const f=li.querySelector('.mini span');f.style.width=Math.min(100,s/b*100)+'%';if(s>b)f.className='over';else if(pace>1.15)f.className='warn'}
     }
@@ -3161,7 +3178,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ======================================================================
 // ---------- Reportar um problema (Definições): abre o email do telemóvel ----------
 // ======================================================================
-const APP_BUILD='v21 (2026-10-18)';
+const APP_BUILD='v22 (2026-10-19)';
 const REPORT_TO='savealotl.support@gmail.com';
 let repKind='Problema';
 function techInfo(){let sync='desligada';try{sync=SYNC.on?'ligada ('+SYNC.status+')':'desligada'}catch(e){}
@@ -3219,6 +3236,57 @@ function remTouch(){if(HU().rem&&window.indexedDB){remSet('lastOpen',Date.now())
 if(HU().rem&&!remRefresh()){HU().rem=false;save()}
 remTouch();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')remTouch()});
+// ======================================================================
+// ---------- Gastos de uma categoria: ver, corrigir e apagar ----------
+// ======================================================================
+let CATV=null,catEdit=null,catUndoT=null;
+function openCatList(id){CATV=id;catEdit=null;renderCatList();$('catSheet').hidden=false;document.body.classList.add('noscroll');setTimeout(()=>$('catClose').focus(),60)}
+function closeCatList(){$('catSheet').hidden=true;document.body.classList.remove('noscroll');CATV=null;catEdit=null;clearTimeout(catUndoT)}
+function renderCatList(undo){
+  const c=F.cats.find(x=>x.id===CATV);if(!c){closeCatList();return}
+  const box=$('catBody'),sc=box.scrollTop;box.innerHTML='';clearTimeout(catUndoT);
+  $('catTitle').textContent=(c.emoji||'✨')+' '+c.name;
+  const all=F.spends.filter(x=>x.c===c.id).sort((a,b)=>b.t-a.t);
+  const sum=el('p','note');sum.style.marginTop='0';
+  sum.textContent=all.length?'Este mês: '+fmt(catMonth(c))+(+c.budget?' de '+fmt(c.budget):'')+'. Toca num gasto para o corrigir ou apagar.':'Ainda não há gastos nesta categoria.';box.appendChild(sum);
+  if(undo){const u=el('div','csUndo');u.innerHTML='<span>Gasto apagado.</span><button type="button">Anular</button>';
+    u.querySelector('button').addEventListener('click',()=>{F.spends.splice(Math.min(undo.i,F.spends.length),0,undo.e);save();renderHome();renderCatList()});box.appendChild(u);
+    catUndoT=setTimeout(()=>{const x=$('catBody').querySelector('.csUndo');if(x)x.remove()},8000)}
+  const shown=all.slice(0,60),ul=el('ul','hlist');let curK='';
+  const dS=new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}),tS=new Intl.DateTimeFormat('pt-PT',{hour:'2-digit',minute:'2-digit'});
+  shown.forEach(e=>{
+    const k=mKey(new Date(e.t));
+    if(k!==curK){curK=k;const h=el('li','hmonth');h.innerHTML='<span></span><b></b>';const [y,m]=k.split('-').map(Number);
+      h.querySelector('span').textContent=monthName(new Date(y,m-1,1)).replace(/^./,ch=>ch.toUpperCase());h.querySelector('b').textContent=fmt(all.filter(x=>mKey(new Date(x.t))===k).reduce((a,x)=>a+x.v,0));ul.appendChild(h)}
+    const name=e.note?e.note:c.name;
+    if(catEdit!==e.id){
+      const li=el('li','hrow2');li.innerHTML='<button type="button" class="hopen"><span class="hem"></span><span class="htx"><span class="hn"></span><small></small></span><b></b><span class="hpen" aria-hidden="true">✎</span></button>';
+      li.querySelector('.hem').textContent=c.emoji||'✨';li.querySelector('.hn').textContent=name;
+      li.querySelector('small').textContent=[whoName(e.w),dS.format(new Date(e.t))+', '+tS.format(new Date(e.t))].filter(Boolean).join(', ');
+      li.querySelector('b').textContent=fmt(e.v);li.querySelector('.hopen').setAttribute('aria-label','Editar '+name+', '+fmt(e.v));
+      li.querySelector('.hopen').addEventListener('click',()=>{catEdit=e.id;renderCatList()});ul.appendChild(li);return}
+    const li=el('li','hrow');
+    li.innerHTML='<input class="hnote" type="text" maxlength="40"><select class="hs"></select><select class="hw"></select><input class="hd" type="date"><label class="hvl"><input class="hv" type="number" min="0.01" step="any" inputmode="decimal"> €</label><div class="hbtns"><button type="button" class="hdel">Apagar</button><button type="button" class="hok">Pronto</button></div>';
+    const q=x=>li.querySelector(x);
+    const opts=F.cats.filter(o=>catShown(o)||o.id===e.c);q('.hs').innerHTML=opts.map(o=>`<option value="${o.id}"></option>`).join('');[...q('.hs').options].forEach((o,n)=>o.textContent=(opts[n].emoji||'')+' '+opts[n].name);
+    q('.hs').value=e.c;q('.hs').setAttribute('aria-label','Categoria');
+    whoOptions(q('.hw'),true);q('.hw').value=e.w||'';q('.hw').setAttribute('aria-label','Quem');
+    const dt=new Date(e.t);q('.hd').value=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');q('.hd').setAttribute('aria-label','Data');
+    q('.hv').value=e.v;q('.hv').setAttribute('aria-label','Valor');q('.hnote').value=e.note||'';q('.hnote').placeholder='Nome (opcional), ex.: Action';q('.hnote').setAttribute('aria-label','Nome do gasto');
+    q('.hs').addEventListener('change',ev=>{e.c=ev.target.value;catEdit=null;save();renderHome();renderCatList();toast('Passou para '+catOf(e.c).name+'.')});
+    q('.hw').addEventListener('change',ev=>{e.w=ev.target.value;save();renderHome()});
+    q('.hd').addEventListener('change',ev=>{const [y,m,d]=ev.target.value.split('-').map(Number);if(y&&m&&d){const o=new Date(e.t);e.t=new Date(y,m-1,d,o.getHours(),o.getMinutes()).getTime();save();renderHome()}});
+    q('.hnote').addEventListener('change',ev=>{const v=ev.target.value.trim();if(v)e.note=v;else delete e.note;save();renderHome()});
+    q('.hv').addEventListener('change',ev=>{const v=money(ev.target.value);if(v>0){e.v=v;save();renderHome()}else ev.target.value=e.v});
+    q('.hok').addEventListener('click',()=>{catEdit=null;renderCatList()});
+    q('.hdel').addEventListener('click',()=>{const i=F.spends.indexOf(e);if(i>=0)F.spends.splice(i,1);catEdit=null;save();renderHome();renderCatList({e,i})});
+    ul.appendChild(li);setTimeout(()=>{const v=li.querySelector('.hv');if(v)v.focus()},30)});
+  box.appendChild(ul);
+  if(all.length>60){const n=el('p','note');n.textContent='A mostrar os 60 gastos mais recentes desta categoria.';box.appendChild(n)}
+  box.scrollTop=sc;
+}
+$('catClose').addEventListener('click',closeCatList);$('catBack').addEventListener('click',closeCatList);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('catSheet').hidden)closeCatList()});
 applyLearnOrder();
 showView(state.view);
 
