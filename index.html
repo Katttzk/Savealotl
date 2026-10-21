@@ -646,7 +646,7 @@ body[data-mode="simple"] .tile{padding:8px 10px}
 body[data-mode="simple"] .tile span{display:none}
 body[data-mode="simple"] .tile b{font-size:1.05rem}
 body[data-mode="simple"] #v-inicio .note:not(#perDay),body[data-help="0"] #v-inicio .note:not(#perDay){display:none}
-body[data-mode="simple"] [data-sec="spend"] .quickSpend,body[data-mode="simple"] [data-sec="spend"] #spNote,body[data-mode="simple"] [data-sec="spend"] #payer,body[data-mode="simple"] [data-sec="spend"] #catGrid{display:none!important}
+body[data-mode="simple"] [data-sec="spend"] .quickSpend,body[data-mode="simple"] [data-sec="spend"] #spNote,body[data-mode="simple"] [data-sec="spend"] #payer,body[data-mode="simple"] #catGrid .editTile{display:none!important}
 body[data-mode="simple"] #billList .fi.done{display:none}
 body[data-mode="simple"].showPaid #billList .fi.done{display:flex}
 body[data-mode="full"] #paidToggle{display:none!important}
@@ -696,6 +696,14 @@ input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip
 .csUndo{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff4dc;color:#b45309;border:2px solid #f5c26b;border-radius:14px;padding:8px 12px;margin:0 0 10px;font-weight:800;font-size:.88rem}
 .csUndo button{font:800 .85rem Nunito,sans-serif;border:none;border-radius:999px;padding:6px 14px;background:#b45309;color:#fff;cursor:pointer}
 #catBody .hlist{margin-top:4px}
+
+.catGrid .cat .ca{font:800 .74rem Nunito,sans-serif;color:var(--muted);margin-top:1px}
+.catGrid .cat .ca.zero{opacity:.55;font-weight:700}
+.cbar{display:block;width:64%;height:4px;border-radius:99px;background:var(--line);margin-top:4px;overflow:hidden}
+.cbar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.cbar i.warn{background:#f5a623}
+.cbar i.over{background:#e24b4b}
+.catEmpty{grid-column:1/-1;margin:4px 0 8px;color:var(--muted);font-weight:700;text-align:center}
 </style>
 </head>
 <body>
@@ -746,7 +754,7 @@ input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip
       </section>
       <section class="panel" data-sec="spend" aria-label="Gastos do dia a dia">
         <div class="row"><h2>Gastos do dia a dia</h2><button type="button" class="mini-edit" id="editCats" data-edit="spend">✎ Editar</button></div>
-        <p class="note">Escreve o valor e toca na categoria. Leva dois segundos.</p>
+        <p class="note">Escreve o valor e toca na categoria. Leva dois segundos. Sem valor, toca numa categoria para ver, corrigir ou apagar os gastos dela.</p>
         <div class="quickSpend"><input type="number" id="spAmt" min="0.01" step="any" inputmode="decimal" placeholder="0,00" aria-label="Valor gasto"><span>€</span></div>
         <input type="text" id="spNote" class="noteIn" maxlength="40" list="notesOut" placeholder="Onde? (opcional) Ex.: Action, Continente" aria-label="Onde foi o gasto">
         <div class="payer" id="payer" aria-label="Quem pagou"></div>
@@ -2276,10 +2284,18 @@ function renderSpend(){
   [...state.axos.map(a=>[a.id,a.name||'Sem nome',a.body]),['','Conjunto','#fff']].forEach(([id,n,c])=>{const b=el('button','pchip');b.type='button';b.setAttribute('aria-pressed',String((F.payer||'')===id));
     b.innerHTML='<i></i><span></span>';b.querySelector('i').style.background=c;b.querySelector('span').textContent=n;b.addEventListener('click',()=>{F.payer=id;save();renderSpend()});pay.appendChild(b)});
   const g=$('catGrid');g.innerHTML='';
-  visCats().forEach(c=>{const b=el('button','cat');b.dataset.id=c.id;b.type='button';b.innerHTML='<span class="em"></span><span class="cn"></span>';b.querySelector('.em').textContent=c.emoji||'✨';b.querySelector('.cn').textContent=c.name;
-    b.addEventListener('click',()=>{if(TE.kind==='cat')return;addSpend(c)});
+  const tiles=visCats().filter(c=>!isSimple()||catMonth(c)>0||(+c.budget||0)>0);
+  tiles.forEach(c=>{const b=el('button','cat');b.dataset.id=c.id;b.type='button';
+    const sm=catMonth(c),bg=+c.budget||0;
+    b.innerHTML='<span class="em"></span><span class="cn"></span><span class="ca"></span>'+(bg?'<span class="cbar"><i></i></span>':'');
+    b.querySelector('.em').textContent=c.emoji||'✨';b.querySelector('.cn').textContent=c.name;
+    const ca=b.querySelector('.ca');ca.textContent=sm>0?fmt(sm):'–';if(!(sm>0))ca.classList.add('zero');
+    if(bg){const f=b.querySelector('.cbar i'),pace=sm/(bg*Math.max(frac,.1));f.style.width=Math.min(100,sm/bg*100)+'%';if(sm>bg)f.className='over';else if(pace>1.15)f.className='warn'}
+    b.setAttribute('aria-label',c.name+', '+(sm>0?fmt(sm)+' este mês':'sem gastos este mês')+'. Toca para registar o valor escrito ou, sem valor, para ver os gastos');
+    b.addEventListener('click',()=>{if(TE.kind==='cat')return;if(!isSimple()&&money($('spAmt').value)>0)addSpend(c);else openCatList(c.id)});
     {const rm=el('span','rm');rm.textContent='×';rm.setAttribute('role','button');rm.setAttribute('aria-label','Retirar '+c.name);rm.addEventListener('click',ev=>{ev.stopPropagation();hideItem('cat',c)});b.appendChild(rm)}
     g.appendChild(b)});
+  if(isSimple()&&!tiles.length){const e0=el('p','catEmpty');e0.textContent='Ainda não há gastos este mês. Toca no ＋ para registar o primeiro.';g.appendChild(e0)}
   g.classList.toggle('editing',TE.kind==='cat');
   {const t=el('button','cat editTile');t.type='button';t.innerHTML='<span class="em">✎</span><span class="cn">Editar</span>';t.addEventListener('click',()=>openBlock('spend','names'));g.appendChild(t)}
   const mon=spendsIn(k);
@@ -2877,7 +2893,8 @@ const OPTS={
   {k:'note',l:'Campo "Onde?" (nome do gasto)',hide:['#spNote']},
   {k:'today',l:'Total de hoje',hide:['.split>div:nth-child(1)']},
   {k:'month',l:'Total do mês',hide:['.split>div:nth-child(2)']},
-  {k:'bud',l:'Lista de categorias com barras de orçamento',hide:['#budgets']},
+  {k:'bud',l:'Total do mês (e barra do orçamento) em cada ícone',hide:['.ca','.cbar']},
+  {k:'list',l:'Lista de categorias por baixo, com os totais',def:false,hide:['#budgets']},
   {k:'hist',l:'Histórico',hide:['#spHist']},
   {k:'help',l:'Textos de ajuda',hide:['.note']}]},
  dia:{title:'Dia-a-dia',root:'#v-dia',list:[
@@ -2908,7 +2925,8 @@ const OPTS={
   {k:'fair',l:'Divisão justa a dois',hide:['#fairPanel']},
   {k:'lessons',l:'Mini-lições',hide:['section[aria-label="Mini-lições"]']}]}
 };
-function OPT(b,k){const o=HU().o;return !(o&&o[b]&&o[b][k]===false)}
+function optDef(b,k){const it=OPTS[b]&&OPTS[b].list.find(x=>x.k===k);return !(it&&it.def===false)}
+function OPT(b,k){const o=HU().o,v=o&&o[b]?o[b][k]:undefined;return v===undefined?optDef(b,k):!!v}
 (function genCSS(){let css='';Object.values(OPTS).forEach(d=>d.list.forEach(it=>(it.hide||[]).forEach(sel=>{css+=d.root+'[data-o-'+it.k+'="0"] '+sel+'{display:none!important}\n'})));
   const st=document.createElement('style');st.textContent=css;document.head.appendChild(st)})();
 function applyOpts(){Object.entries(OPTS).forEach(([b,d])=>{const root=document.querySelector(d.root);if(!root)return;
@@ -2961,7 +2979,7 @@ function renderBlock(){
   const head=t=>{const p=el('span','flabel');p.style.cssText='display:block;margin-top:12px';p.textContent=t;box.appendChild(p)};
   const row=(label,on,fn)=>{const li=el('li');li.innerHTML='<label class="toggle optT"><input type="checkbox"><span class="sw"></span><span></span></label>';li.querySelector('label span:last-child').textContent=label;
     const cb=li.querySelector('input');cb.checked=on;cb.addEventListener('change',()=>fn(cb));return li};
-  const setOpt=(k,on)=>{h.o[BLK]=h.o[BLK]||{};if(on)delete h.o[BLK][k];else h.o[BLK][k]=false;save();applyOpts();if(BLK==='inc')renderIncome();if(BLK==='sim')renderSim()};
+  const setOpt=(k,on)=>{h.o[BLK]=h.o[BLK]||{};if(on===optDef(BLK,k))delete h.o[BLK][k];else h.o[BLK][k]=on;save();applyOpts();if(BLK==='inc')renderIncome();if(BLK==='sim')renderSim()};
   if(['bills','spend','sum'].includes(BLK)){head('Negócio');const bu=el('ul','optList');
     bu.appendChild(row('Tenho um negócio: mostrar a opção Negócio',bizOn(),cb=>{setBiz(cb.checked);rerenderBlock()}));box.appendChild(bu);
     const bn=el('p','note');bn.textContent='Desligada, a app esconde tudo o que é de negócio (a categoria, a etiqueta e o grupo à parte). Ligada, as despesas do negócio ficam separadas das pessoais.';box.appendChild(bn)}
@@ -3178,7 +3196,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ======================================================================
 // ---------- Reportar um problema (Definições): abre o email do telemóvel ----------
 // ======================================================================
-const APP_BUILD='v22 (2026-10-19)';
+const APP_BUILD='v24 (2026-10-19)';
 const REPORT_TO='savealotl.support@gmail.com';
 let repKind='Problema';
 function techInfo(){let sync='desligada';try{sync=SYNC.on?'ligada ('+SYNC.status+')':'desligada'}catch(e){}
