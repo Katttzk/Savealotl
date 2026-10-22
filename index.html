@@ -704,6 +704,9 @@ input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip
 .cbar i.warn{background:#f5a623}
 .cbar i.over{background:#e24b4b}
 .catEmpty{grid-column:1/-1;margin:4px 0 8px;color:var(--muted);font-weight:700;text-align:center}
+
+.item .rmx{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:2px solid var(--surface);font:800 1.05rem/1 Nunito,sans-serif;display:flex;align-items:center;justify-content:center;z-index:2;cursor:pointer;box-shadow:0 2px 6px rgba(75,42,99,.25)}
+.item .rmx:active{transform:scale(.92)}
 </style>
 </head>
 <body>
@@ -1822,10 +1825,12 @@ function cur(){return state.axos[state.sel]}
 let pending=false;
 function changed(){save();if(!pending){pending=true;const i=state.sel;requestAnimationFrame(()=>{pending=false;if(A[i])renderAxo(i)})}renderPanel()}
 function fit(svg){try{const b=svg.firstElementChild.getBBox();const p=6;svg.setAttribute('viewBox',`${b.x-p} ${b.y-p} ${b.width+p*2} ${b.height+p*2}`)}catch(e){}}
-function card(nome,art,sub,lock,on,onClick,pv,bg){
+function card(nome,art,sub,lock,on,onClick,pv,bg,onRemove){
   const b=document.createElement('button');b.type='button';b.className='item'+(lock?' locked':'');b.setAttribute('aria-pressed',String(!lock&&on));if(lock)b.setAttribute('aria-disabled','true');
   b.innerHTML=`<svg ${pv?`viewBox="${pv}"`:''} ${bg?`style="background:${bg};border-radius:10px"`:''} aria-hidden="true"><g>${art}</g></svg><b></b><small></small>${lock?'<span class="lock" aria-hidden="true">🔒</span>':''}`;
-  b.querySelector('b').textContent=nome;b.querySelector('small').textContent=sub;b.addEventListener('click',onClick);items.appendChild(b);
+  b.querySelector('b').textContent=nome;b.querySelector('small').textContent=sub;b.addEventListener('click',onClick);
+  if(onRemove&&on&&!lock){const x=document.createElement('span');x.className='rmx';x.textContent='×';x.setAttribute('role','button');x.setAttribute('aria-label','Tirar '+nome);x.addEventListener('click',ev=>{ev.stopPropagation();onRemove()});b.appendChild(x)}
+  items.appendChild(b);
   if(!pv)fit(b.querySelector('svg'));
 }
 function heading(txt){const h=document.createElement('p');h.className='subh';h.textContent=txt;items.appendChild(h)}
@@ -1837,7 +1842,7 @@ function renderItems(){
       const sub=lock?(it.season?'Chega '+SEASONS[it.season].quando:'Aos '+fmt(it.at)):on?(it.hand?'A segurar':it.outfit?'A vestir':'A usar'):(it.hand?'Segurar':it.outfit?'Vestir':'Usar');
       card(it.nome,it.hand?it.draw(a.body,78):it.draw(it.id==='nenhum'?'':(a.accColor||'#ffb3c7')),sub,lock,on,()=>{
         if(lock){toast(it.season?it.nome+' desbloqueia automaticamente '+SEASONS[it.season].quando+'.':it.nome+' desbloqueia quando pouparem '+fmt(it.at)+' no total.');return}
-        if(it.hand)a.hand=on?'':it.id;else if(it.outfit)a.outfit=on?'':it.id;else if(it.face)a.face=on?'':it.id;else a.acc=it.id;changed()},it.pv)};
+        if(it.hand)a.hand=on?'':it.id;else if(it.outfit)a.outfit=on?'':it.id;else if(it.face)a.face=on?'':it.id;else a.acc=it.id;changed()},it.pv,undefined,it.id==='nenhum'?null:()=>{if(it.hand)a.hand='';else if(it.outfit)a.outfit='';else if(it.face)a.face='';else a.acc='nenhum';changed()})};
     all.filter(x=>!x.season).forEach(mk);
     heading('🎃 Halloween e 🎄 Natal');all.filter(x=>x.season).forEach(mk);
   }else{
@@ -3264,7 +3269,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ======================================================================
 // ---------- Reportar um problema (Definições): abre o email do telemóvel ----------
 // ======================================================================
-const APP_BUILD='v26 (2026-10-22)';
+const APP_BUILD='v27 (2026-10-22)';
 const REPORT_TO='savealotl.support@gmail.com';
 let repKind='Problema';
 function techInfo(){let sync='desligada';try{sync=SYNC.on?'ligada ('+SYNC.status+')':'desligada'}catch(e){}
