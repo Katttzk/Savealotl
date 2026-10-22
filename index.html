@@ -1420,8 +1420,8 @@ function axoSVG(i){
   s+=outfitBack(a,bcy,bry,brx);
   s+=`<ellipse class="ol" cx="0" cy="${bcy}" rx="${brx}" ry="${bry}" fill="${B}"/><ellipse cx="0" cy="${bcy+6}" rx="${brx*0.58}" ry="${bry*0.55}" fill="#fff" opacity=".25"/>`;
   s+=outfitBody(a,bcy,brx,bry);
-  [-1,1].forEach(sd=>{const fx=sd*24*bf,fy=bcy+bry-6;s+=`<ellipse class="ol" cx="${fx}" cy="${fy}" rx="15" ry="11" fill="${B}"/><path d="M${fx-5},${fy+3} v6 M${fx+5},${fy+3} v6" stroke="${OL}" stroke-width="3" stroke-linecap="round"/>`});
-  if(!a.hand)[-1,1].forEach(sd=>{s+=`<g class="arm" data-s="${sd}" data-x="${sd*(brx-8)}" data-y="${bcy-bry*0.35}"><path class="ol" d="M-10,-2 C-12,12 -10,24 0,26 C10,24 12,12 10,-2 Z" fill="${oOn(a,'santa')?'#d6384a':B}"/>${oOn(a,'santa')?'<path d="M-10.5,16 Q0,23 10.5,16" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>':''}<path d="M-3.5,18 v6 M3.5,18 v6" stroke="${OL}" stroke-width="3" stroke-linecap="round"/></g>`});
+  [-1,1].forEach(sd=>{if(oOn(a,'manto'))return;const fx=sd*24*bf,fy=bcy+bry-6;s+=`<ellipse class="ol" cx="${fx}" cy="${fy}" rx="15" ry="11" fill="${B}"/><path d="M${fx-5},${fy+3} v6 M${fx+5},${fy+3} v6" stroke="${OL}" stroke-width="3" stroke-linecap="round"/>`});
+  if(!a.hand)[-1,1].forEach(sd=>{s+=`<g class="arm" data-s="${sd}" data-x="${sd*(brx-8)}" data-y="${bcy-bry*0.35}"><path class="ol" d="M-10,-2 C-12,12 -10,24 0,26 C10,24 12,12 10,-2 Z" fill="${sleeveC(a,B)}"/>${sleeveCuff(a)}<path d="M-3.5,18 v6 M3.5,18 v6" stroke="${OL}" stroke-width="3" stroke-linecap="round"/></g>`});
   GP.forEach(([x,y,ang],k)=>[-1,1].forEach(sd=>{s+=`<g class="gill" data-x="${sd*x}" data-y="${y}" data-a="${ang}" data-sd="${sd}" data-k="${k}"><g transform="scale(${gl},${0.75+0.25*g})"><path class="ol" d="${GILL}" fill="${Gc}"/><path d="M4,-4 Q30,-8 54,-2 Q30,3 4,4 Z" fill="#fff" opacity=".22"/><path d="M6,0 Q32,-2 58,0" stroke="${gD}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".55"/></g></g>`}));
   s+=`<path class="ol" d="${HEAD}" fill="${B}"/><ellipse cx="-46" cy="-44" rx="14" ry="7" transform="rotate(-32 -46 -44)" fill="#fff" opacity=".7"/><circle cx="-24" cy="-58" r="4" fill="#fff" opacity=".7"/>`;
   {const r=rng(31+i);for(let k=0;k<16;k++){const x=(r()-0.5)*120,y=-72+r()*34;if((x/88)**2+(y/72)**2>0.9)continue;s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.8+r()*3.2).toFixed(1)}" fill="#fff" opacity=".7"/>`}
@@ -1431,6 +1431,7 @@ function axoSVG(i){
     for(let k=0;k<8;k++){const x=(r()-0.5)*brx*1.4,y=bcy+(r()-0.5)*bry*1.2;s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(2.5+r()*2.5).toFixed(1)}" fill="${sc}" opacity=".5"/>`}}
   s+=outfitFace(a);
   s+=`<g class="face"></g>`;
+  s+=skullTop(a);
   const acc=ACC.find(x=>x.id===a.acc);if(oOn(a,'santa'))s+=outfitHat(a);else if(acc&&acc.id!=='nenhum'&&unlocked(acc))s+=`<g transform="${acc.pos}">${acc.draw(a.accColor)}</g>`;
   const hd=HAND.find(x=>x.id===a.hand);if(hd&&unlocked(hd))s+=hd.draw(B,bcy);
   if(st===4)s+=`<g class="spark">`+[[-110,-70],[112,-60],[-120,30],[120,40],[0,-118]].map(([x,y],k)=>`<g transform="translate(${x},${y})"><path d="${SPARK}" fill="#ffe27a" stroke="${OL}" stroke-width="2.5" class="glow" style="animation-delay:${k*0.3}s"/></g>`).join('')+`</g>`;
@@ -1495,15 +1496,50 @@ function capeBack(bcy,bry,brx){const y0=bcy-bry*.95,y1=bcy+bry*1.05,w0=brx*.85,w
   return `<path class="ol" d="${sh(w0,y0,w1,y1)}" fill="#2a2438"/><path d="${sh(w0*.8,y0+8,w1-13,y1-9)}" fill="#b3263f"/><path d="M${-w1*.6},${y1-20} Q0,${y1-6} ${w1*.6},${y1-20}" stroke="#d94a64" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>`}
 function capeCollar(bcy,bry){const yN=bcy-bry*.4;return [-1,1].map(sd=>`<g transform="scale(${sd},1)"><path class="ol" d="M-22,${yN+8} L-84,${yN-30} L-60,${yN+34} Z" fill="#2a2438"/><path d="M-28,${yN+6} L-72,${yN-20} L-57,${yN+22} Z" fill="#b3263f"/></g>`).join('')+`<circle class="ols" cx="0" cy="${bcy+3}" r="5.4" fill="#ffd45a"/><circle cx="0" cy="${bcy+3}" r="2.2" fill="#b3263f"/>`}
 OUT.push({id:'capa',nome:'Capa preta',season:'halloween',at:0,outfit:1,pv:'-96 -10 192 132',draw:()=>capeBack(60,40,44)+capeCollar(60,40)});
-const FACE=[{id:'dentes',nome:'Dentinhos de vampiro',season:'halloween',at:0,face:1,pv:'-34 6 68 46',
-  draw:()=>`<path class="ol" fill="none" style="stroke-width:5.5" d="M-15,18 Q-7.5,30 0,18 Q7.5,30 15,18"/>`+[-8,8].map(x=>`<path class="ols" d="M${x-3.7},22.2 L${x+3.7},22.2 L${x},33.5 Z" fill="#fff"/>`).join('')}];
+const FACE=[{id:'dentes',nome:'Dentinhos de vampiro',season:'halloween',at:0,face:1,pv:'-42 -18 84 80',
+  draw:()=>`<circle class="ol" cx="0" cy="22" r="36" fill="#ffd6e2"/><ellipse cx="-24" cy="20" rx="9" ry="5.5" fill="#ff9fbe" opacity=".7"/><ellipse cx="24" cy="20" rx="9" ry="5.5" fill="#ff9fbe" opacity=".7"/><circle cx="-14" cy="6" r="4" fill="${OL}"/><circle cx="14" cy="6" r="4" fill="${OL}"/><path class="ol" fill="none" style="stroke-width:5.5" d="M-15,18 Q-7.5,30 0,18 Q7.5,30 15,18"/>`+[-8,8].map(x=>`<path class="ols" d="M${x-3.7},22.2 L${x+3.7},22.2 L${x},33.5 Z" fill="#fff"/>`).join('')}];
 const FANG={smile:[8,22.2,33.5],calm:[6.4,21.6,31.5],sad:[6.6,24.4,34],open:[8,21.4,34.5],joy:[9,21,35]};
 function fOn(a){if(!a||a.face!=='dentes')return false;return seasonOwned('halloween')}
 function fangsFor(ex,a){if(!fOn(a))return '';const [x,y0,y1]=FANG[ex]||FANG.open;return [-x,x].map(xx=>`<path class="ols" d="M${xx-3.7},${y0} L${xx+3.7},${y0} L${xx},${y1} Z" fill="#fff"/>`).join('')}
+// --- Capa longa com capuz (estilo Harry Potter) ---
+function robeBack(bcy,bry,brx){const y1=bcy+bry*1.95,w0=brx*.95,w1=brx+66;
+  const sh=(a0,b0,a1,b1)=>`M${-a0},${b0} C${-a0-18},${b0+30} ${-a1-8},${b1-60} ${-a1},${b1} Q${-a1/2},${b1+12} 0,${b1+6} Q${a1/2},${b1+12} ${a1},${b1} C${a1+8},${b1-60} ${a0+18},${b0+30} ${a0},${b0} Z`;
+  return `<path class="ol" d="M-106,50 C-112,-66 -56,-114 0,-114 C56,-114 112,-66 106,50 Z" fill="#241f33"/><path d="M-90,44 C-94,-54 -48,-96 0,-96 C48,-96 94,-54 90,44 Z" fill="#3a3150"/>`
+   +`<path class="ol" d="${sh(w0,bcy-bry*.5,w1,y1)}" fill="#241f33"/>`}
+function robeBody(bcy,rx,ry){const hy=bcy+ry*1.8;
+  return `<path class="ol" d="M${-rx*.98},${bcy-ry*.2} C${-rx-10},${bcy+ry*.6} ${-rx-30},${bcy+ry*1.1} ${-rx-36},${hy} Q0,${hy+16} ${rx+36},${hy} C${rx+30},${bcy+ry*1.1} ${rx+10},${bcy+ry*.6} ${rx*.98},${bcy-ry*.2} Z" fill="#241f33"/>`
+   +`<ellipse cx="0" cy="${bcy}" rx="${rx}" ry="${ry}" fill="#241f33"/>`
+   +`<path d="M${-rx*.52},${bcy+ry*.35} Q${-rx*.6},${bcy+ry*1} ${-rx*.78},${hy-4} M${rx*.52},${bcy+ry*.35} Q${rx*.6},${bcy+ry*1} ${rx*.78},${hy-4} M0,${bcy-ry*.45} L0,${hy+4}" stroke="#3d3454" stroke-width="2.8" fill="none" stroke-linecap="round"/>`
+   +`<path d="M${-rx-30},${hy-8} Q0,${hy+8} ${rx+30},${hy-8}" stroke="#4a3f66" stroke-width="3.4" fill="none" stroke-linecap="round"/>`
+   +`<circle class="ols" cx="0" cy="${bcy-ry*.28}" r="5.4" fill="#d5d3e4"/><circle cx="0" cy="${bcy-ry*.28}" r="2" fill="#7a68a8"/>`}
+const hoodRim=()=>`<path d="M-86,16 C-90,-44 -46,-68 0,-68 C46,-68 90,-44 86,16" fill="none" stroke="#241f33" stroke-width="14" stroke-linecap="round"/><path d="M-80,12 C-84,-40 -44,-62 0,-62 C44,-62 84,-40 80,12" fill="none" stroke="#4a3f66" stroke-width="3" stroke-linecap="round"/>`;
+const sleeveC=(a,B)=>oOn(a,'santa')?'#d6384a':oOn(a,'manto')?'#241f33':B;
+const sleeveCuff=a=>oOn(a,'santa')?'<path d="M-10.5,16 Q0,23 10.5,16" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>':oOn(a,'manto')?'<path d="M-10.5,16 Q0,23 10.5,16" fill="none" stroke="#6b6485" stroke-width="5" stroke-linecap="round"/>':'';
+OUT.push({id:'manto',nome:'Capa longa com capuz',season:'halloween',at:0,outfit:1,pv:'-112 -118 224 268',
+  draw:()=>robeBack(66,40,44)+robeBody(66,44,40)+`<path class="ol" d="${HEAD}" fill="#ffd6e2" transform="translate(0,2) scale(.8)"/>`+`<g transform="translate(0,2) scale(.8)">${hoodRim()}</g><circle cx="-22" cy="0" r="6" fill="${OL}"/><circle cx="22" cy="0" r="6" fill="${OL}"/>`});
+// --- Máscara de caveira mexicana (Dia de los Muertos) ---
+const dFlower=(x,y,r,c1,c2)=>`<g transform="translate(${x},${y})">`+[0,1,2,3,4,5,6,7].map(k=>`<ellipse cx="${(Math.cos(k*Math.PI/4)*r*.62).toFixed(1)}" cy="${(Math.sin(k*Math.PI/4)*r*.62).toFixed(1)}" rx="${(r*.4).toFixed(1)}" ry="${(r*.26).toFixed(1)}" transform="rotate(${k*45} ${(Math.cos(k*Math.PI/4)*r*.62).toFixed(1)} ${(Math.sin(k*Math.PI/4)*r*.62).toFixed(1)})" fill="${c1}"/>`).join('')+`<circle r="${(r*.3).toFixed(1)}" fill="${c2}"/></g>`;
+const eyeRing=x=>{const cols=['#ff7aa8','#ffb347','#7fd6c8','#b48cf0'];let t=`<circle cx="${x}" cy="-2" r="31" fill="#ff7aa8"/>`;
+  for(let k=0;k<8;k++){const an=k*Math.PI/4+Math.PI/8,px=x+Math.cos(an)*34,py=-2+Math.sin(an)*34;t+=`<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="8.5" ry="5.2" transform="rotate(${(an*180/Math.PI).toFixed(0)} ${px.toFixed(1)} ${py.toFixed(1)})" fill="${cols[k%4]}"/>`}
+  return t+`<circle cx="${x}" cy="-2" r="28.5" fill="#fffdf5" stroke="#4a2a4a" stroke-width="2.4"/><circle cx="${x}" cy="-2" r="25.5" fill="#ffd45a" opacity=".85"/>`};
+function skullMask(){let t=`<path class="ol" d="${HEAD}" transform="scale(.95)" fill="#fffdf5"/>`;
+  t+=eyeRing(-38)+eyeRing(38);
+  t+=dFlower(0,-52,17,'#ff9f43','#ffd45a')+dFlower(-34,-60,12,'#ff7aa8','#fff3a0')+dFlower(34,-60,12,'#b48cf0','#fff3a0');
+  [[-60,-44,'#7fd6c8'],[-68,-26,'#ff7aa8'],[60,-44,'#ffb347'],[68,-26,'#7fd6c8'],[-16,-68,'#ff7aa8'],[16,-68,'#7fd6c8']].forEach(([x,y,c])=>{t+=`<circle cx="${x}" cy="${y}" r="3.2" fill="${c}"/>`});
+  [-54,-44,-34,34,44,54].forEach((x,k)=>{t+=`<circle cx="${x}" cy="${40+Math.abs(x)*.05}" r="2.6" fill="${['#ff7aa8','#7fd6c8','#ffb347'][k%3]}"/>`});
+  t+=`<path d="M-22,57 Q0,68 22,57" stroke="#b48cf0" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M-10,62 Q0,67 10,62" stroke="#ff7aa8" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  t+=`<path d="M0,6 C-5,0 -10,5 0,13 C10,5 5,0 0,6 Z" fill="#4a2a4a" transform="translate(0,-4) scale(.7)"/>`;
+  return t}
+function skullTop(a){if(!sOn(a))return '';const q=(t,P0,P1,P2)=>[(1-t)*(1-t)*P0[0]+2*(1-t)*t*P1[0]+t*t*P2[0],(1-t)*(1-t)*P0[1]+2*(1-t)*t*P1[1]+t*t*P2[1]];
+  let t='';[-1,1].forEach(sd=>{const P0=[sd*50,22],P1=[sd*36,34],P2=[sd*20,24];t+=`<path d="M${P0[0]},${P0[1]} Q${P1[0]},${P1[1]} ${P2[0]},${P2[1]}" stroke="#4a2a4a" stroke-width="3.2" fill="none" stroke-linecap="round"/>`;
+    [.12,.38,.62,.86].forEach(u=>{const [x,y]=q(u,P0,P1,P2);t+=`<path d="M${x.toFixed(1)},${(y-5).toFixed(1)} L${x.toFixed(1)},${(y+6).toFixed(1)}" stroke="#4a2a4a" stroke-width="2.6" stroke-linecap="round"/>`})});return t}
+function sOn(a){return !!a&&a.face==='caveira'&&seasonOwned('halloween')}
+FACE.push({id:'caveira',nome:'Máscara de caveira mexicana',season:'halloween',at:0,face:1,pv:'-96 -80 192 156',
+  draw:()=>skullMask()+`<circle cx="-38" cy="-2" r="19" fill="${OL}"/><circle cx="38" cy="-2" r="19" fill="${OL}"/><circle cx="-43" cy="-8" r="6" fill="#fff"/><circle cx="33" cy="-8" r="6" fill="#fff"/><path d="M-15,22 Q0,32 15,22" stroke="#4a2a4a" stroke-width="3.4" fill="none" stroke-linecap="round"/>`});
 function oOn(a,id){if(!a||a.outfit!==id)return false;const o=OUT.find(x=>x.id===id);return !!o&&seasonOwned(o.season)}
-function outfitBack(a,bcy,bry,brx){return oOn(a,'asas')?`<g transform="translate(0,${bcy-bry*.55}) scale(1.18)">${batWingPair()}</g>`:oOn(a,'capa')?capeBack(bcy,bry,brx||54):''}
-function outfitBody(a,bcy,rx,ry){return oOn(a,'santa')?santaJacket(bcy,rx,ry):oOn(a,'capa')?capeCollar(bcy,ry):''}
-function outfitFace(a){return oOn(a,'santa')?santaBeard():''}
+function outfitBack(a,bcy,bry,brx){return oOn(a,'manto')?robeBack(bcy,bry,brx||54):oOn(a,'asas')?`<g transform="translate(0,${bcy-bry*.55}) scale(1.18)">${batWingPair()}</g>`:oOn(a,'capa')?capeBack(bcy,bry,brx||54):''}
+function outfitBody(a,bcy,rx,ry){return oOn(a,'manto')?robeBody(bcy,rx,ry):oOn(a,'santa')?santaJacket(bcy,rx,ry):oOn(a,'capa')?capeCollar(bcy,ry):''}
+function outfitFace(a){return (sOn(a)?skullMask():'')+(oOn(a,'santa')?santaBeard():oOn(a,'manto')?hoodRim():'')}
 function outfitHat(a){return oOn(a,'santa')?santaHat():''}
 // --- Decoração sazonal do aquário (vale para todos os aquários) ---
 const pumpkin=()=>`<ellipse cx="0" cy="-22" rx="36" ry="28" fill="#ffd45a" opacity=".22" class="glow"/><ellipse class="ol" cx="0" cy="-22" rx="26" ry="21" fill="#ff9f43"/><path d="M-10,-42 C-18,-30 -18,-14 -10,-3 M10,-42 C18,-30 18,-14 10,-3" stroke="#d9741b" stroke-width="2.5" fill="none" stroke-linecap="round"/><path class="ols" d="M-3,-42 Q0,-54 8,-52 L5,-42 Z" fill="#5aa874"/><path class="glow" d="M-15,-28 l8,-3 -2,9 z M15,-28 l-8,-3 2,9 z" fill="#ffe27a"/><path class="glow" d="M-12,-14 l4,4 4,-3 4,4 4,-4 4,3 4,-4 l-2,7 q-10,6 -22,0 z" fill="#ffe27a"/>`;
@@ -1733,7 +1769,7 @@ function frame(now){
     an.blinkT-=dt;if(an.blinkT<0){an.blink=.13;an.blinkT=2.5+Math.random()*3}
     if(an.blink>0)an.blink-=dt;
     if(r.eyes)r.eyes.setAttribute('transform',`translate(0,-2) scale(1,${an.blink>0?.12:1}) translate(0,2)`);
-    const tg=$('tag'+i);if(tg){const acc=a.acc;const top=((TALL[acc]&&unlocked(ACC.find(x=>x.id===acc)))||oOn(a,'santa'))?172:108;
+    const tg=$('tag'+i);if(tg){const acc=a.acc;const top=((TALL[acc]&&unlocked(ACC.find(x=>x.id===acc)))||oOn(a,'santa'))?172:oOn(a,'manto')?140:108;
       tg.setAttribute('transform',`translate(${px},${(hy+(y-top)*sc-6).toFixed(2)}) scale(${Math.min(1,lay(i).f+.12).toFixed(2)})`)}
   });
   weeds.forEach(w=>w.g.setAttribute('transform',`translate(${w.x},${w.y}) scale(${w.s}) rotate(${(Math.sin(t*.9+w.ph)*3*calm).toFixed(2)})`));
@@ -3228,7 +3264,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ======================================================================
 // ---------- Reportar um problema (Definições): abre o email do telemóvel ----------
 // ======================================================================
-const APP_BUILD='v25 (2026-10-21)';
+const APP_BUILD='v26 (2026-10-22)';
 const REPORT_TO='savealotl.support@gmail.com';
 let repKind='Problema';
 function techInfo(){let sync='desligada';try{sync=SYNC.on?'ligada ('+SYNC.status+')':'desligada'}catch(e){}
