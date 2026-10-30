@@ -736,6 +736,9 @@ input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip
 .lgrip{flex:none;width:26px;text-align:center;font-size:1.25rem;line-height:1;color:var(--muted);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;padding:4px 0}
 .litem.lifted{position:relative;z-index:5;box-shadow:0 10px 24px rgba(75,42,99,.3);border-color:var(--accent);cursor:grabbing}
 .lview{margin:10px 0 2px}
+
+#blkSheet{z-index:46}
+.qchip.qedit{border-style:dashed;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -2845,6 +2848,7 @@ function renderQA(){
   const list=t==='in'?visSrcs().map(x=>[x.id,x.emoji||'💰',x.name]):t==='out'?visCats().map(x=>[x.id,x.emoji||'✨',x.name]):state.savings.map(x=>[x.id,'🐠',x.name||'Poupança']);
   list.forEach(([id,em,n])=>{const b=el('button','qchip');b.type='button';b.setAttribute('aria-pressed',String(id===sel));b.innerHTML='<span></span><b></b>';b.querySelector('span').textContent=em;b.querySelector('b').textContent=n;
     b.addEventListener('click',()=>{if(t==='in'){q.src=id;const sr=F.srcs.find(x=>x.id===id);if(sr&&+sr.expected>0&&!QA.v){QA.v=String(+sr.expected);QA.per='mes';qaShow()}}else if(t==='out')q.c=id;else q.sv=id;save();renderQA()});box.appendChild(b)});
+  if(t!=='save'){const eb=el('button','qchip qedit');eb.type='button';eb.innerHTML='<span>✎</span><b>Editar</b>';eb.setAttribute('aria-label',t==='in'?'Editar as fontes de rendimento':'Editar as categorias de gastos');eb.addEventListener('click',()=>openBlock(t==='in'?'inc':'spend','names'));box.appendChild(eb)}
   $('qaPerWrap').hidden=t!=='in';
   const pr=$('qaPer');pr.innerHTML='';[['dia','Um dia'],['semana','Uma semana'],['mes','Um mês']].forEach(([k,n])=>{const b=el('button','qchip small');b.type='button';b.textContent=n;b.setAttribute('aria-pressed',String(QA.per===k));b.addEventListener('click',()=>{QA.per=k;renderQA()});pr.appendChild(b)});
   let people=state.axos.map(a=>[a.id,a.name||'Sem nome',a.body]);
@@ -3102,7 +3106,7 @@ function applyOpts(){Object.entries(OPTS).forEach(([b,d])=>{const root=document.
 let BLK=null;
 function openBlock(id,focus){if(!OPTS[id])return;BLK=id;askRepor=false;renderBlock();$('blkSheet').hidden=false;document.body.classList.add('noscroll');
   setTimeout(()=>{if(focus==='names'){const n=$('blkBody').querySelector('#namesEd');if(n)n.scrollIntoView({block:'start'})}else $('blkClose').focus()},80)}
-function closeBlock(){$('blkSheet').hidden=true;document.body.classList.remove('noscroll');BLK=null}
+function closeBlock(){$('blkSheet').hidden=true;document.body.classList.remove('noscroll');BLK=null;if(!$('qaSheet').hidden){document.body.classList.add('noscroll');renderQA()}}
 const DEF_CATS=()=>[{id:'c1',emoji:'🛒',name:'Supermercado',budget:0,ess:true},{id:'c2',emoji:'🐾',name:'Animais',budget:0,ess:true},{id:'c3',emoji:'☕',name:'Cafés e restaurantes',budget:0,ess:false},{id:'c4',emoji:'⛽',name:'Combustível e transportes',budget:0,ess:true},{id:'c5',emoji:'🏠',name:'Casa',budget:0,ess:true},{id:'c6',emoji:'💊',name:'Saúde',budget:0,ess:true},{id:'c7',emoji:'🎉',name:'Lazer',budget:0,ess:false},{id:'c8',emoji:'🛍️',name:'Compras',budget:0,ess:false},{id:'c9',emoji:'✨',name:'Outros',budget:0,ess:false},{id:'c10',emoji:'🏪',name:'Negócio',budget:0,ess:false,biz:true}];
 const DEF_SRCS=()=>[{id:'f1',emoji:'💼',name:'Salário',expected:0},{id:'f2',emoji:'💶',name:'Trabalho do dia',expected:0},{id:'f3',emoji:'🎁',name:'Extras',expected:0}];
 function resetList(kind){if(kind==='cat')dedupeBiz();const defs=kind==='cat'?DEF_CATS():DEF_SRCS(),cur=kind==='cat'?F.cats:F.srcs,byId=new Map(cur.map(x=>[x.id,x]));
@@ -3364,7 +3368,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ======================================================================
 // ---------- Reportar um problema (Definições): abre o email do telemóvel ----------
 // ======================================================================
-const APP_BUILD='v30 (2026-10-30)';
+const APP_BUILD='v31 (2026-10-30)';
 const REPORT_TO='savealotl.support@gmail.com';
 let repKind='Problema';
 function techInfo(){let sync='desligada';try{sync=SYNC.on?'ligada ('+SYNC.status+')':'desligada'}catch(e){}
