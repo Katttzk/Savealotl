@@ -22,19 +22,19 @@
 <style>
 :root{
   --bg:#F6F1FC; --surface:#FFFFFF; --ink:#3B2452; --muted:#7A6891; --line:#E6DAF3;
-  --accent:#E4578C; --accent-ink:#FFFFFF; --chip:#F8F3FD;
+  --accent:#E4578C; --accent-ink:#FFFFFF; --chip:#F8F3FD; --warn:#B86E00; --over:#D32F2F;
   color-scheme:light; box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#1E1530; --surface:#2A1E40; --ink:#F1E9FB; --muted:#B8A7CF; --line:#3E2F58;
-    --accent:#F58FB4; --accent-ink:#2A0E1C; --chip:#33264B; color-scheme:dark;
+    --accent:#F58FB4; --accent-ink:#2A0E1C; --chip:#33264B; --warn:#FFC247; --over:#FF7A7A; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#1E1530; --surface:#2A1E40; --ink:#F1E9FB; --muted:#B8A7CF; --line:#3E2F58;
-  --accent:#F58FB4; --accent-ink:#2A0E1C; --chip:#33264B; color-scheme:dark;
+  --accent:#F58FB4; --accent-ink:#2A0E1C; --chip:#33264B; --warn:#FFC247; --over:#FF7A7A; color-scheme:dark;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:border-box}
@@ -707,6 +707,35 @@ input[type=email]{width:100%;font:inherit;color:var(--ink);background:var(--chip
 
 .item .rmx{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:2px solid var(--surface);font:800 1.05rem/1 Nunito,sans-serif;display:flex;align-items:center;justify-content:center;z-index:2;cursor:pointer;box-shadow:0 2px 6px rgba(75,42,99,.25)}
 .item .rmx:active{transform:scale(.92)}
+
+.catGrid .cat .ca.warn{color:var(--warn)}
+.catGrid .cat .ca.over{color:var(--over)}
+.catGrid .cat.lim-warn{border-color:var(--warn)}
+.catGrid .cat.lim-over{border-color:var(--over)}
+.cbar i.warn{background:var(--warn)}
+.cbar i.over{background:var(--over)}
+.csLimit{background:var(--chip);border:2px solid var(--line);border-radius:16px;padding:10px 12px;margin:0 0 10px}
+.csLab{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:800}
+.csIn{display:flex;align-items:center;gap:6px;font-weight:800;color:var(--muted)}
+.csIn input{width:104px;font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:6px 10px;text-align:right}
+.csBar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:8px}
+.csBar[hidden]{display:none}
+.csBar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.csBar i.warn{background:var(--warn)}
+.csBar i.over{background:var(--over)}
+.csMsg{margin:8px 0 0;font-size:.86rem;font-weight:700;color:var(--muted)}
+.csMsg.warn{color:var(--warn)}
+.csMsg.over{color:var(--over)}
+
+.litems{position:relative}
+.lsec{list-style:none;display:flex;justify-content:space-between;align-items:baseline;margin:8px 2px 0;font-weight:800;font-size:.86rem;color:var(--muted)}
+.lsec small{font-weight:700}
+.ldonehead{list-style:none;margin:10px 2px 0;font-weight:800;font-size:.84rem;color:var(--muted)}
+.laisle{position:relative;flex:none;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--surface);border:2px solid var(--line);font-size:1rem;cursor:pointer}
+.laisle select{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;border:none}
+.lgrip{flex:none;width:26px;text-align:center;font-size:1.25rem;line-height:1;color:var(--muted);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;padding:4px 0}
+.litem.lifted{position:relative;z-index:5;box-shadow:0 10px 24px rgba(75,42,99,.3);border-color:var(--accent);cursor:grabbing}
+.lview{margin:10px 0 2px}
 </style>
 </head>
 <body>
@@ -2368,8 +2397,10 @@ function renderSpend(){
     b.innerHTML='<span class="em"></span><span class="cn"></span><span class="ca"></span>'+(bg?'<span class="cbar"><i></i></span>':'');
     b.querySelector('.em').textContent=c.emoji||'✨';b.querySelector('.cn').textContent=c.name;
     const ca=b.querySelector('.ca');ca.textContent=sm>0?fmt(sm):'–';if(!(sm>0))ca.classList.add('zero');
-    if(bg){const f=b.querySelector('.cbar i'),pace=sm/(bg*Math.max(frac,.1));f.style.width=Math.min(100,sm/bg*100)+'%';if(sm>bg)f.className='over';else if(pace>1.15)f.className='warn'}
-    b.setAttribute('aria-label',c.name+', '+(sm>0?fmt(sm)+' este mês':'sem gastos este mês')+'. Toca para registar o valor escrito ou, sem valor, para ver os gastos');
+    const lv=limitLevel(sm,bg);
+    if(bg){const f=b.querySelector('.cbar i');f.style.width=Math.min(100,sm/bg*100)+'%';if(lv)f.className=lv}
+    if(lv){ca.classList.add(lv);b.classList.add('lim-'+lv)}
+    b.setAttribute('aria-label',c.name+', '+(sm>0?fmt(sm)+' este mês':'sem gastos este mês')+(lv==='over'?', limite ultrapassado':lv==='warn'?', perto do limite':'')+'. Toca para registar o valor escrito ou, sem valor, para ver os gastos');
     b.addEventListener('click',()=>{if(TE.kind==='cat')return;if(!isSimple()&&money($('spAmt').value)>0)addSpend(c);else openCatList(c.id)});
     {const rm=el('span','rm');rm.textContent='×';rm.setAttribute('role','button');rm.setAttribute('aria-label','Retirar '+c.name);rm.addEventListener('click',ev=>{ev.stopPropagation();hideItem('cat',c)});b.appendChild(rm)}
     g.appendChild(b)});
@@ -2383,7 +2414,7 @@ function renderSpend(){
   visCats().filter(c=>!isSimple()||catMonth(c)>0||(+c.budget||0)>0).forEach(c=>{
     const li=el('li','bud'+(editCats?' editing':''));
     if(editCats){
-      li.innerHTML=`<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da categoria"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Orçamento mensal" placeholder="Sem limite"> €/mês</label><label class="bess"><input type="checkbox"> Essencial</label><label class="bess bizc"><input type="checkbox"> Negócio</label><button type="button" class="ckx">×</button>`;
+      li.innerHTML=`<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da categoria"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Limite mensal" placeholder="Sem limite"> €/mês de limite</label><label class="bess"><input type="checkbox"> Essencial</label><label class="bess bizc"><input type="checkbox"> Negócio</label><button type="button" class="ckx">×</button>`;
       const q=s=>li.querySelector(s);q('.bem').value=c.emoji||'';q('.bname').value=c.name;q('.bbud').value=c.budget||'';q('.bess input').checked=!!c.ess;q('.bizc input').checked=!!c.biz;
       q('.bem').addEventListener('change',e=>{c.emoji=e.target.value.trim()||'✨';save();renderSpend()});
       q('.bname').addEventListener('change',e=>{c.name=e.target.value.trim()||c.name;save();renderSpend()});
@@ -2404,12 +2435,13 @@ function renderSpend(){
   $('editCats').textContent=editCats?'✓ Pronto':'✎ Editar';
   renderHist('sp');
 }
+function limitLevel(sm,bg){return !(bg>0)?'':sm>bg?'over':sm>=bg*.8?'warn':''}
 function addSpend(c){
   const inp=$('spAmt'),v=money(inp.value);
   if(!(v>0)){inp.focus();toast('Escreve primeiro quanto gastaste, depois toca na categoria.');return}
   const nt=$('spNote').value.trim();const sp={id:uid(),c:c.id,v,t:Date.now(),w:F.payer||''};if(nt)sp.note=nt;F.spends.push(sp);inp.value='';$('spNote').value='';save();renderHome();
   const s=catMonth(c),b=+c.budget||0;
-  toast((c.emoji||'✨')+' '+fmt(v)+(nt?': '+nt:'')+' ('+c.name+').'+(b?(s>b?' Passou '+fmt(s-b)+' do orçamento deste mês.':' Vais em '+fmt(s)+' de '+fmt(b)+'.'):''));
+  toast((c.emoji||'✨')+' '+fmt(v)+(nt?': '+nt:'')+' ('+c.name+').'+(b?(s>b?' 🚨 Ultrapassaste o limite em '+fmt(s-b)+'.':(s>=b*.8?' ⚠️ ':' ')+'Vais em '+fmt(s)+' de '+fmt(b)+' ('+Math.round(s/b*100)+'%).'):''));
 }
 $('spAmt').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();toast('Agora toca na categoria.')}});
 
@@ -2661,6 +2693,55 @@ let listSel=null,askDelList=false,doneOpen=false,carry=true;
 const activeLists=()=>F.lists.filter(l=>!l.done);
 function newList(name,items){const sup=(F.cats.find(c=>/super/i.test(c.name))||F.cats[0]||{id:''}).id;
   const l={id:uid(),name:name||'Nova lista',cat:sup,done:false,items:(items||[]).map(t=>({id:uid(),t,done:false}))};F.lists.unshift(l);listSel=l.id;askDelList=false;save();return l}
+// ---------- Listas: secções do supermercado e arrastar para reordenar ----------
+const AISLES=[{id:'fl',e:'🥬',n:'Frutas e legumes'},{id:'pa',e:'🥖',n:'Padaria'},{id:'tp',e:'🥩',n:'Talho e peixe'},{id:'fr',e:'🧀',n:'Frescos'},{id:'co',e:'❄️',n:'Congelados'},{id:'me',e:'🥫',n:'Mercearia'},{id:'be',e:'🥤',n:'Bebidas'},{id:'hi',e:'🧴',n:'Higiene'},{id:'li',e:'🧹',n:'Limpeza e casa'},{id:'an',e:'🐾',n:'Animais'},{id:'ou',e:'🛒',n:'Outros'}];
+const AISLE_WORDS={
+ fl:'tomate,alface,cenoura,cebola,alho,batata,batata doce,pepino,curgete,beringela,pimento,brocolo,couve,couve flor,couve de bruxelas,espinafre,rucula,agriao,abobora,nabo,rabanete,cogumelo,espargo,ervilha,feijao verde,milho,salada,banana,maca,pera,laranja,tangerina,clementina,limao,lima,morango,uva,melao,melancia,ananas,manga,kiwi,abacate,pessego,nectarina,ameixa,cereja,framboesa,mirtilo,figo,roma,fruta,legume,verdura,hortela,salsa,coentro,manjericao,cebolinho,erva,ervas aromaticas,gengibre,aipo,beterraba,repolho,toranja,papaia,diospiro,marmelo,alho frances,cebola roxa',
+ pa:'pao,broa,baguete,croissant,pastel de nata,bolo,bolo rei,queque,sonho,papo seco,carcaca,pao de forma,pao de leite,pao integral,bola de berlim,padaria',
+ tp:'frango,peru,porco,vaca,vitela,borrego,cabrito,carne,carne picada,bife,febra,entrecosto,costeleta,lombo,peito de frango,coxa,asa,hamburguer,salsicha,peixe,salmao,bacalhau,pescada,dourada,robalo,sardinha,carapau,cavala,linguado,camarao,gamba,lula,polvo,marisco,ameijoa,mexilhao,perna,secretos,pluma,almondega,peixe espada,filete,posta,talho,peixaria',
+ fr:'leite,queijo,iogurte,manteiga,margarina,nata,ovo,requeijao,fiambre,presunto,chourico,salpicao,paio,alheira,bacon,mortadela,gelatina,tofu,hummus,kefir,skyr,pudim,sobremesa,mozzarella,feta,queijo fresco,queijo ralado,cream cheese,massa fresca,leite achocolatado,charcutaria,fumado,leite creme,danone,actimel,fresco',
+ co:'gelado,gelo,nugget,douradinho,pizza,croquete,congelado,gelados',
+ me:'arroz,massa,esparguete,macarrao,farinha,acucar,sal,azeite,oleo,vinagre,molho,ketchup,maionese,mostarda,atum,conserva,feijao,grao,lentilha,cereal,aveia,muesli,bolacha,biscoito,tosta,torrada,chocolate,cafe,cha,achocolatado,compota,mel,nutella,manteiga de amendoim,fruto seco,amendoim,noz,amendoa,batata frita,pipoca,caldo,especiaria,pimenta,oregao,sopa,passata,tomate pelado,polpa de tomate,pure,fermento,cacau,creme de leite,leite condensado,leite em po,papa,barra de cereais,tortilha,cuscuz,quinoa,milho doce,azeitona,pickles,pao ralado,levedura,bicarbonato,leite de coco,molho de soja,tahini,granola,mercearia',
+ be:'agua,sumo,refrigerante,cerveja,vinho,cola,coca cola,fanta,sprite,ice tea,cha frio,energetica,whisky,vodka,gin,licor,aguardente,espumante,champanhe,sidra,bebida,bebida vegetal,leite de aveia,leite de soja,leite de amendoa,tonica,soda,limonada,kombucha,sangria,porto,rum',
+ hi:'champo,shampoo,gel de banho,sabonete,pasta de dentes,dentifrico,escova de dentes,fio dentario,desodorizante,papel higienico,lenco,lenco de papel,algodao,cotonete,penso,penso higienico,tampao,absorvente,fralda,toalhita,creme hidratante,hidratante,protetor solar,perfume,espuma de barbear,lamina,maquilhagem,removedor de maquilhagem,condicionador,elixir,bucal,pente,escova de cabelo,mascara de cabelo,laca,gel de cabelo,tinta de cabelo,depilacao,creme de maos,creme de rosto,creme corporal,disco de algodao,higiene',
+ li:'detergente,lixivia,esfregao,esponja,saco do lixo,saco de lixo,papel de cozinha,rolo de cozinha,papel aluminio,pelicula,amaciador,po da loica,loica,pastilha,sal da maquina,desinfetante,multiusos,limpa vidros,wc,pano,luva,vassoura,esfregona,balde,cloro,ambientador,inseticida,guardanapo,vela,pilha,lampada,fosforo,isqueiro,detergente da roupa,detergente da loica,limpa fornos,anti calcario,desentupidor,saco de aspirador,papel vegetal,toalhete,limpeza,sacos de congelacao',
+ an:'racao,comida de gato,comida de cao,comida para gato,comida para cao,areia,areia de gato,petisco para cao,petisco para gato,snack para cao,coleira,brinquedo para cao,brinquedo para gato,gato,cao,passaro,semente para passaro,comida de peixe'};
+const normT=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+const AISLE_PHRASES=[],AISLE_TOKENS=new Map();
+Object.entries(AISLE_WORDS).forEach(([a,str])=>str.split(',').forEach(w=>{w=w.trim();if(!w)return;if(w.indexOf(' ')>0)AISLE_PHRASES.push([w,a]);else if(!AISLE_TOKENS.has(w))AISLE_TOKENS.set(w,a)}));
+AISLE_PHRASES.sort((x,y)=>y[0].length-x[0].length);
+const aisleVariants=w=>[w,w.replace(/oes$/,'ao'),w.replace(/aes$/,'ao'),w.replace(/ais$/,'al'),w.replace(/eis$/,'el'),w.replace(/res$/,'r'),w.replace(/es$/,''),w.replace(/s$/,'')];
+function guessAisle(text){
+  const n=normT(text);if(!n)return 'ou';
+  if(/congelad/.test(n))return 'co';
+  if(/\b(lata|latas|conserva|conservas|enlatad\w*)\b/.test(n))return 'me';
+  const pad=' '+n+' ';
+  for(const [ph,a] of AISLE_PHRASES){if(pad.includes(' '+ph+' ')||pad.includes(' '+ph+'s ')||pad.includes(' '+ph+'es '))return a}
+  for(const tk of n.split(' ')){for(const v of aisleVariants(tk)){const a=AISLE_TOKENS.get(v);if(a)return a}}
+  return 'ou';
+}
+function aisleOf(it){return it.a||(F.aisleMap&&F.aisleMap[normT(it.t)])||guessAisle(it.t)}
+function learnAisle(t,a){if(!F.aisleMap||typeof F.aisleMap!=='object')F.aisleMap={};F.aisleMap[normT(t)]=a}
+function listDrag(L,ul,li,ev,mode){
+  if((ev.button||0)>0)return;ev.preventDefault();const id=ev.pointerId;
+  const grab=ev.clientY-(li.getBoundingClientRect().top+li.offsetHeight/2);
+  li.classList.add('lifted');
+  const mv=x=>x&&x.tagName==='LI'&&!x.classList.contains('done')&&!x.classList.contains('ldonehead');
+  const flip=(sib,fn)=>{const b=sib.offsetTop;fn();const a=sib.offsetTop;if(a!==b&&!reduced){sib.style.transition='none';sib.style.transform='translateY('+(b-a)+'px)';sib.getBoundingClientRect();sib.style.transition='transform .16s ease';sib.style.transform='';setTimeout(()=>{sib.style.transition=''},200)}};
+  const pos=cy=>{const y=cy-ul.getBoundingClientRect().top-grab;
+    for(let g=0;g<14;g++){const prev=li.previousElementSibling,next=li.nextElementSibling;
+      if(mv(prev)&&!(prev.classList.contains('lsec')&&!prev.previousElementSibling)&&y<prev.offsetTop+prev.offsetHeight/2){flip(prev,()=>li.after(prev));continue}
+      if(mv(next)&&y>next.offsetTop+next.offsetHeight/2){flip(next,()=>li.before(next));continue}
+      break}
+    li.style.transform='translateY('+(y-(li.offsetTop+li.offsetHeight/2))+'px)'};
+  const move=e=>{if(e.pointerId===id)pos(e.clientY)};
+  const up=e=>{if(e.pointerId!==id)return;document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
+    li.style.transform='';li.classList.remove('lifted');
+    const seq=[];let cur=null;[...ul.children].forEach(c=>{if(c.classList.contains('lsec'))cur=c.dataset.a;else if(c.classList.contains('litem')&&!c.classList.contains('done'))seq.push([c.dataset.id,cur])});
+    const map=new Map(L.items.map(x=>[x.id,x])),dn=L.items.filter(x=>x.done);
+    if(mode==='sec')seq.forEach(([i,a])=>{const it=map.get(i);if(it&&a&&a!==aisleOf(it)){it.a=a;learnAisle(it.t,a)}});
+    L.items=[...seq.map(([i])=>map.get(i)).filter(Boolean),...dn];save();renderLists()};
+  document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);pos(ev.clientY)}
 function renderLists(){
   const act=activeLists();if(!act.find(l=>l.id===listSel))listSel=act[0]?act[0].id:null;
   const ch=$('lChips');ch.innerHTML='';
@@ -2673,8 +2754,9 @@ function renderLists(){
   const done=L.items.filter(i=>i.done).length,left=L.items.length-done;
   body.innerHTML=`<div class="lhead"><input class="lname" type="text" maxlength="40" aria-label="Nome da lista"><select class="lcat" aria-label="Categoria de gasto"></select></div>
     <div class="brow lprog"><span></span><button type="button" class="mini-edit ldel"></button></div><div class="mini"><span></span></div>
+    <div class="seg small lview" role="tablist"><button type="button" role="tab" data-v="sec">🏬 Por secção</button><button type="button" role="tab" data-v="free">✋ Pela minha ordem</button></div>
     <ul class="litems"></ul>
-    <div class="ladd"><input type="text" class="lnew" maxlength="200" placeholder="Ex.: leite, pão, fruta" aria-label="Novo item"><button type="button">Juntar</button></div>
+    <div class="ladd"><input type="text" class="lnew" maxlength="1000" placeholder="Ex.: leite, pão, fruta" aria-label="Novo item"><button type="button">Juntar</button></div>
     <div class="lpay"><span class="flabel">Terminaste as compras? Quanto pagaste?</span>
       <div class="quickSpend"><input type="number" class="ltot" min="0.01" step="any" inputmode="decimal" placeholder="0,00" aria-label="Total pago"><span>€</span></div>
       <div class="payer lwho" aria-label="Quem pagou"></div>
@@ -2688,15 +2770,23 @@ function renderLists(){
   q('.mini span').style.width=(L.items.length?done/L.items.length*100:0)+'%';
   const del=q('.ldel');del.textContent=askDelList?'Tens a certeza? Apagar':'Apagar lista';del.classList.toggle('warnb',askDelList);
   del.addEventListener('click',()=>{if(!askDelList){askDelList=true;renderLists();return}F.lists=F.lists.filter(x=>x!==L);askDelList=false;save();renderLists();toast('Lista apagada.')});
-  const ul=q('.litems');
-  [...L.items.filter(i=>!i.done),...L.items.filter(i=>i.done)].forEach(it=>{
-    const li=el('li','litem'+(it.done?' done':''));li.innerHTML='<button type="button" class="tick"></button><input type="text" class="ltext" maxlength="80"><button type="button" class="ckx">×</button>';
+  const ul=q('.litems'),mode=HU().listView==='free'?'free':'sec';
+  q('.lview').querySelectorAll('button').forEach(bt=>{bt.setAttribute('aria-selected',String(bt.dataset.v===mode));bt.addEventListener('click',()=>{HU().listView=bt.dataset.v;save();renderLists()})});
+  const addRow=it=>{
+    const li=el('li','litem'+(it.done?' done':''));li.dataset.id=it.id;
+    li.innerHTML='<button type="button" class="tick"></button><span class="laisle"><span class="lae"></span><select aria-label="Secção do supermercado"></select></span><input type="text" class="ltext" maxlength="80"><span class="lgrip" role="button" aria-label="Arrastar para mudar a ordem">⠿</span><button type="button" class="ckx">×</button>';
     const tk=li.querySelector('.tick');tk.textContent=it.done?'✓':'';tk.setAttribute('aria-pressed',String(it.done));tk.setAttribute('aria-label',(it.done?'Desriscar ':'Riscar ')+it.t);
     tk.addEventListener('click',()=>{it.done=!it.done;save();renderLists()});
-    const tx=li.querySelector('.ltext');tx.value=it.t;tx.setAttribute('aria-label','Item');tx.addEventListener('change',e=>{const v=e.target.value.trim();if(v){it.t=v;save()}else e.target.value=it.t});
+    const cur=aisleOf(it),as=li.querySelector('select');as.innerHTML=AISLES.map(A=>`<option value="${A.id}">${A.e} ${A.n}</option>`).join('');as.value=cur;li.querySelector('.lae').textContent=(AISLES.find(A=>A.id===cur)||AISLES[AISLES.length-1]).e;
+    as.addEventListener('change',e=>{it.a=e.target.value;learnAisle(it.t,it.a);save();renderLists()});
+    const gr=li.querySelector('.lgrip');if(it.done){gr.remove();li.querySelector('.laisle').remove()}else gr.addEventListener('pointerdown',ev=>listDrag(L,ul,li,ev,mode));
+    const tx=li.querySelector('.ltext');tx.value=it.t;tx.setAttribute('aria-label','Item');tx.addEventListener('change',e=>{const v=e.target.value.trim();if(v){const old=aisleOf(it);it.t=v;save();if(aisleOf(it)!==old)renderLists()}else e.target.value=it.t});
     tx.addEventListener('keydown',e=>{if(e.key==='Enter')tx.blur()});
     const x=li.querySelector('.ckx');x.setAttribute('aria-label','Tirar '+it.t);x.addEventListener('click',()=>{L.items=L.items.filter(y=>y!==it);save();renderLists()});
-    ul.appendChild(li)});
+    ul.appendChild(li)};
+  const open=L.items.filter(i=>!i.done),dn=L.items.filter(i=>i.done);
+  if(mode==='sec'){AISLES.forEach(A=>{const g=open.filter(i=>aisleOf(i)===A.id);if(!g.length)return;const h=el('li','lsec');h.dataset.a=A.id;h.innerHTML='<span></span><small></small>';h.querySelector('span').textContent=A.e+' '+A.n;h.querySelector('small').textContent=g.length;ul.appendChild(h);g.forEach(addRow)})}else open.forEach(addRow);
+  if(dn.length){const dh=el('li','ldonehead');dh.textContent='✓ No carrinho ('+dn.length+')';ul.appendChild(dh);dn.forEach(addRow)}
   const add=()=>{const v=q('.lnew').value;const parts=v.split(/[,;\n]/).map(t=>t.trim()).filter(Boolean);if(!parts.length){q('.lnew').focus();return}
     parts.forEach(t=>L.items.push({id:uid(),t,done:false}));save();renderLists();$('lBody').querySelector('.lnew').focus()};
   q('.ladd button').addEventListener('click',add);q('.lnew').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();add()}});
@@ -2791,7 +2881,7 @@ $('qaSave').addEventListener('click',()=>{
   if(t==='in'){const sr=srcOf(id);const r={id:uid(),src:id,v,t:ts,w:q.w||'',per:QA.per};if(nt)r.note=nt;F.recv.push(r);save();closeQA();refreshView();
     toast((sr.emoji||'💰')+' +'+fmt(v)+' ('+(nt?nt+', ':'')+sr.name+(QA.per==='semana'?', semana':QA.per==='mes'?', mês':'')+'). Este mês já entraram '+fmt(receivedM())+'.')}
   else if(t==='out'){const c=catOf(id);const sp={id:uid(),c:id,v,t:ts,w:q.w||''};if(nt)sp.note=nt;F.spends.push(sp);save();closeQA();refreshView();
-    const sm=catMonth(c),b=+c.budget||0;toast((c.emoji||'✨')+' '+fmt(v)+(nt?': '+nt:'')+' ('+c.name+').'+(b?(sm>b?' Passou '+fmt(sm-b)+' do orçamento.':' Vais em '+fmt(sm)+' de '+fmt(b)+'.'):''))}
+    const sm=catMonth(c),b=+c.budget||0;toast((c.emoji||'✨')+' '+fmt(v)+(nt?': '+nt:'')+' ('+c.name+').'+(b?(sm>b?' 🚨 Ultrapassaste o limite em '+fmt(sm-b)+'.':(sm>=b*.8?' ⚠️ ':' ')+'Vais em '+fmt(sm)+' de '+fmt(b)+' ('+Math.round(sm/b*100)+'%).'):''))}
   else{const k=state.savings.findIndex(x=>x.id===id);if(k<0)return;const sv=state.savings[k];const w=q.w||(state.axos[0]&&state.axos[0].id);closeQA();
     if(today&&state.view==='poupancas'){if(state.cur!==k){state.cur=k;rebuildAll(true);renderScene()}const ai=state.axos.findIndex(a=>a.id===w);if(ai>=0)state.sel=ai;addMoney(v)}
     else{sv.by[w]=Math.round(((sv.by[w]||0)+v)*100)/100;sv.log.push({id:uid(),a:w,v,t:ts});if(sv.log.length>60)sv.log.shift();save();refreshView();
@@ -3028,7 +3118,7 @@ function buildNames(kind){
   arr.filter(x=>kind==='cat'?catShown(x):!x.hidden).forEach(it=>{const li=el('li','bud editing');
     li.innerHTML=kind==='src'
       ?'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da fonte"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" placeholder="variável" aria-label="Previsto por mês"> €/mês previstos</label>'
-      :'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da despesa"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Orçamento mensal" placeholder="Sem limite"> €/mês</label><label class="bess"><input type="checkbox" class="cEss"> Essencial</label><label class="bess bizc"><input type="checkbox" class="cBiz"> Negócio</label>';
+      :'<input class="bem" type="text" maxlength="4" aria-label="Emoji"><input class="bname" type="text" maxlength="30" aria-label="Nome da despesa"><label class="bb"><input class="bbud" type="number" min="0" step="any" inputmode="decimal" aria-label="Limite mensal" placeholder="Sem limite"> €/mês de limite</label><label class="bess"><input type="checkbox" class="cEss"> Essencial</label><label class="bess bizc"><input type="checkbox" class="cBiz"> Negócio</label>';
     const q=x=>li.querySelector(x);q('.bem').value=it.emoji||'';q('.bname').value=it.name;q('.bbud').value=(kind==='src'?it.expected:it.budget)||'';
     q('.bem').addEventListener('change',e=>{it.emoji=e.target.value.trim()||(kind==='src'?'💰':'✨');save();renderHome()});
     q('.bname').addEventListener('change',e=>{const v=e.target.value.trim();if(v)it.name=v;else e.target.value=it.name;save();renderHome()});
@@ -3274,7 +3364,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ======================================================================
 // ---------- Reportar um problema (Definições): abre o email do telemóvel ----------
 // ======================================================================
-const APP_BUILD='v28 (2026-10-22)';
+const APP_BUILD='v30 (2026-10-30)';
 const REPORT_TO='savealotl.support@gmail.com';
 let repKind='Problema';
 function techInfo(){let sync='desligada';try{sync=SYNC.on?'ligada ('+SYNC.status+')':'desligada'}catch(e){}
@@ -3344,7 +3434,14 @@ function renderCatList(undo){
   $('catTitle').textContent=(c.emoji||'✨')+' '+c.name;
   const all=F.spends.filter(x=>x.c===c.id).sort((a,b)=>b.t-a.t);
   const sum=el('p','note');sum.style.marginTop='0';
-  sum.textContent=all.length?'Este mês: '+fmt(catMonth(c))+(+c.budget?' de '+fmt(c.budget):'')+'. Toca num gasto para o corrigir ou apagar.':'Ainda não há gastos nesta categoria.';box.appendChild(sum);
+  sum.textContent=all.length?'Este mês: '+fmt(catMonth(c))+'. Toca num gasto para o corrigir ou apagar.':'Ainda não há gastos nesta categoria.';
+  const lim=el('div','csLimit');
+  lim.innerHTML='<label class="csLab"><span>🎯 Limite por mês</span><span class="csIn"><input type="number" min="0" step="any" inputmode="decimal" placeholder="Sem limite" aria-label="Limite mensal desta categoria"> €</span></label><div class="csBar" hidden><i></i></div><p class="csMsg"></p>';
+  const li0=lim.querySelector('input'),bar=lim.querySelector('.csBar'),msg=lim.querySelector('.csMsg');li0.value=+c.budget>0?c.budget:'';
+  const upd=()=>{const bg=+c.budget||0,sm2=catMonth(c),lv=limitLevel(sm2,bg);bar.hidden=!bg;msg.className='csMsg'+(lv?' '+lv:'');const bi=bar.querySelector('i');bi.style.width=Math.min(100,bg?sm2/bg*100:0)+'%';bi.className=lv;
+    msg.textContent=!bg?'Define um limite: fica amarelo quando chegares a 80% e vermelho quando o ultrapassares.':sm2>bg?'🚨 Ultrapassaste o limite em '+fmt(sm2-bg)+'.':sm2>=bg*.8?'⚠️ Já gastaste '+fmt(sm2)+' de '+fmt(bg)+'. Estás perto do limite.':'Gastaste '+fmt(sm2)+' de '+fmt(bg)+'. Ainda podes gastar '+fmt(bg-sm2)+'.'};
+  li0.addEventListener('change',ev=>{const v=Math.max(0,money(ev.target.value)||0);c.budget=v;save();renderHome();upd();toast(v?'Limite de '+c.name+': '+fmt(v)+' por mês.':'Limite retirado.')});
+  upd();box.appendChild(sum);box.appendChild(lim);
   if(undo){const u=el('div','csUndo');u.innerHTML='<span>Gasto apagado.</span><button type="button">Anular</button>';
     u.querySelector('button').addEventListener('click',()=>{F.spends.splice(Math.min(undo.i,F.spends.length),0,undo.e);save();renderHome();renderCatList()});box.appendChild(u);
     catUndoT=setTimeout(()=>{const x=$('catBody').querySelector('.csUndo');if(x)x.remove()},8000)}
