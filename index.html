@@ -3424,7 +3424,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ======================================================================
 // ---------- Reportar um problema (Definições): abre o email do telemóvel ----------
 // ======================================================================
-const APP_BUILD='v32 (2026-10-31)';
+const APP_BUILD='v33 (2026-11-09)';
 const REPORT_TO='savealotl.support@gmail.com';
 let repKind='Problema';
 function techInfo(){let sync='desligada';try{sync=SYNC.on?'ligada ('+SYNC.status+')':'desligada'}catch(e){}
@@ -3720,8 +3720,8 @@ function initGis(){if(tokenClient)return true;if(!gisReady()||!HAS_CID)return fa
   tokenClient=google.accounts.oauth2.initTokenClient({client_id:CID,scope:SCOPE,
     callback:resp=>{const w=tokenWait;tokenWait=null;if(resp.error){SYNC.lastErr={code:'auth',msg:resp.error};w&&w.rej(resp);return}
       try{if(!google.accounts.oauth2.hasGrantedAllScopes(resp,SCOPE)){SYNC.lastErr={code:'scope',msg:''};w&&w.rej(new Error('scope'));return}}catch(e){}SYNC.token=resp.access_token;SYNC.exp=Date.now()+(+resp.expires_in||3600)*1000;w&&w.res()},
-    error_callback:e=>{const w=tokenWait;tokenWait=null;w&&w.rej(e)}});return true}
-function getToken(interactive){return new Promise((res,rej)=>{if(!initGis()){rej(new Error('Google ainda não carregou'));return}tokenWait={res,rej};tokenClient.requestAccessToken({prompt:interactive?'consent':''})})}
+    error_callback:e=>{const w=tokenWait;tokenWait=null;SYNC.lastErr={code:'popup',msg:(e&&e.type)||''};w&&w.rej(e)}});return true}
+function getToken(interactive,promptOverride){return new Promise((res,rej)=>{if(!initGis()){rej(new Error('Google ainda não carregou'));return}tokenWait={res,rej};tokenClient.requestAccessToken({prompt:promptOverride!==undefined?promptOverride:(interactive?'consent':'')})})}
 async function api(url,opt,retry){opt=opt||{};if(!SYNC.token||Date.now()>SYNC.exp-60000)await getToken(false);
   const r=await fetch(url,Object.assign({},opt,{headers:Object.assign({},opt.headers||{},{Authorization:'Bearer '+SYNC.token})}));
   if(r.status===401&&retry!==false){SYNC.token=null;await getToken(false);return api(url,opt,false)}
@@ -3780,7 +3780,7 @@ async function connectDrive(){
   if(state.demo){toast('Sai do modo de exemplo (Começar a sério) antes de ligar ao Google Drive.');return}
   if(!HAS_CID){toast('Falta configurar o Client ID do Google (ver LEIA-ME).');return}
   if(!gisReady()){toast('O Google ainda está a carregar. Tenta daqui a uns segundos.');return}
-  try{const needConsent=(!SYNC.token&&localStorage.getItem('sav-sync')!=='1')||(SYNC.lastErr&&(SYNC.lastErr.code==='scope'||SYNC.lastErr.code===403));if(needConsent)SYNC.token=null;await getToken(needConsent);SYNC.on=true;localStorage.setItem('sav-sync','1');await syncNow();toast('Ligado ao Google Drive. As alterações passam para o outro telemóvel em cerca de 5 segundos.')}
+  try{const needConsent=(!SYNC.token&&localStorage.getItem('sav-sync')!=='1')||(SYNC.lastErr&&(SYNC.lastErr.code==='scope'||SYNC.lastErr.code===403));if(needConsent)SYNC.token=null;await getToken(needConsent,needConsent?'select_account consent':'select_account');SYNC.on=true;localStorage.setItem('sav-sync','1');await syncNow();toast('Ligado ao Google Drive. As alterações passam para o outro telemóvel em cerca de 5 segundos.')}
   catch(e){console.warn(e);setSyncStatus('login');toast('Não foi possível ligar ao Google. Tenta outra vez.')}
 }
 function disconnectDrive(){try{if(SYNC.token&&gisReady())google.accounts.oauth2.revoke(SYNC.token,()=>{})}catch(e){}
@@ -3790,6 +3790,7 @@ function setSyncStatus(st){SYNC.status=st;const b=$('syncBtn');if(!b)return;b.da
   const lab={off:'Sincronização desligada',login:'Toca para voltar a ligar ao Google',sync:'A sincronizar…',ok:'Sincronizado',err:'Erro na sincronização',offline:'Sem internet: guardado neste aparelho'}[st]||'';
   b.setAttribute('aria-label',lab+'. Abrir definições');renderSyncInfo()}
 function errText(){const e=SYNC.lastErr||{},m=String(e.msg||'');
+  if(e.code==='popup')return m==='popup_failed_to_open'?'🔑 O navegador bloqueou a janela da Google. Permite pop-ups para este site e toca em "Ligar ao Google Drive".':'🔑 A janela da Google foi fechada antes de terminar. Toca em "Ligar ao Google Drive" e escolhe a conta.';
   if(e.code==='scope')return '🔑 Falta dar autorização ao Google Drive. Toca em "Ligar ao Google Drive" e, no ecrã da Google, marca a caixa do Google Drive antes de "Continuar".';
   if(e.code==='auth')return '🔑 A Google não deixou ligar ('+m+'). Confirma que esta conta está nos "Utilizadores de teste" da Google Cloud.';
   if(e.code===403&&/has not been used|is disabled|accessNotConfigured|SERVICE_DISABLED/i.test(m))return '⚙️ A Google Drive API não está ativada no projeto da Google Cloud onde criaste o ID de cliente. Ativa-a em APIs e serviços → Biblioteca → Google Drive API, espera 2 minutos e toca em "Sincronizar agora".';
